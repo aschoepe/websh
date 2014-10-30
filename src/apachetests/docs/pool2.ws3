@@ -1,0 +1,32 @@
+# $Id: pool2.ws3 1402306 2012-10-25 19:56:07Z ronnie $
+# interp pool testing websh code.
+
+web::initializer {
+
+    set classid [web::interpcfg]
+
+    web::command default {
+	if {[info exists counter]} {
+	    incr counter
+	} else {
+	    set counter 1
+	}
+	web::put "Counter is [web::interpcfg numreq]-$counter, maxrequests is [web::interpclasscfg $classid maxrequests]"
+    }
+
+    web::command max {
+	if { [info exists counter] } {
+	    incr counter
+	} else {
+	    set counter 1
+	}
+	web::interpclasscfg $classid maxrequests [web::param n 7]
+	if {[web::param retire 0]} {
+	    web::put "Retire interpreter\n"
+	    web::interpcfg retire 1
+	}
+	web::put "Counter is [web::interpcfg numreq]-$counter, reset maxrequests to [web::interpclasscfg $classid maxrequests]"
+    }
+}
+
+web::dispatch
