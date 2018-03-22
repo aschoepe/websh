@@ -223,7 +223,7 @@ m4trace:configure.in:71: -1- AC_SUBST([RANLIB])
 m4trace:configure.in:71: -1- AC_SUBST_TRACE([RANLIB])
 m4trace:configure.in:71: -1- m4_pattern_allow([^RANLIB$])
 m4trace:configure.in:77: -1- _m4_warn([obsolete], [The macro `AC_CYGWIN' is obsolete.
-You should run autoupdate.], [../../lib/autoconf/specific.m4:321: AC_CYGWIN is expanded from...
+You should run autoupdate.], [../../lib/autoconf/specific.m4:328: AC_CYGWIN is expanded from...
 configure.in:77: the top level])
 m4trace:configure.in:77: -1- AC_CANONICAL_HOST
 m4trace:configure.in:77: -1- AC_CANONICAL_BUILD
@@ -400,12 +400,12 @@ m4trace:configure.in:424: -1- m4_pattern_allow([^web_LIB_FILE$])
 m4trace:configure.in:425: -1- AC_SUBST([SHLIB_LD_LIBS])
 m4trace:configure.in:425: -1- AC_SUBST_TRACE([SHLIB_LD_LIBS])
 m4trace:configure.in:425: -1- m4_pattern_allow([^SHLIB_LD_LIBS$])
-m4trace:configure.in:441: -1- AC_SUBST([TCLSH_PROG])
-m4trace:configure.in:441: -1- AC_SUBST_TRACE([TCLSH_PROG])
-m4trace:configure.in:441: -1- m4_pattern_allow([^TCLSH_PROG$])
-m4trace:configure.in:447: -1- AC_SUBST([TCLSH_PROG])
-m4trace:configure.in:447: -1- AC_SUBST_TRACE([TCLSH_PROG])
-m4trace:configure.in:447: -1- m4_pattern_allow([^TCLSH_PROG$])
+m4trace:configure.in:443: -1- AC_SUBST([TCLSH_PROG])
+m4trace:configure.in:443: -1- AC_SUBST_TRACE([TCLSH_PROG])
+m4trace:configure.in:443: -1- m4_pattern_allow([^TCLSH_PROG$])
+m4trace:configure.in:449: -1- AC_SUBST([TCLSH_PROG])
+m4trace:configure.in:449: -1- AC_SUBST_TRACE([TCLSH_PROG])
+m4trace:configure.in:449: -1- m4_pattern_allow([^TCLSH_PROG$])
 m4trace:configure.in:454: -1- _m4_warn([obsolete], [The macro `AC_ERROR' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/oldnames.m4:34: AC_ERROR is expanded from...
 configure.in:454: the top level])

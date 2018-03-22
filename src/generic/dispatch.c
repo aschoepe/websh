@@ -459,9 +459,9 @@ int parsePostData(Tcl_Interp * interp, Tcl_Obj * name,
 	return parseMultipartFormData(requestData, interp,
 				      Tcl_GetString(name), content_type);
     }
-
-    LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__,
-	    "web::dispatch -postdata", WEBLOG_WARNING,
-	    "unknown content-type \"", content_type, "\"", NULL);
-    return TCL_ERROR;
+    /* ------------------------------------------------------------------------
+     * all other formats
+     * --------------------------------------------------------------------- */
+    return rawReadPostData(requestData, interp,
+			   Tcl_GetString(name), content_type, len);
 }

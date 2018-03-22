@@ -69,6 +69,8 @@ int parseUrlEncodedFormData(RequestData * requestData, Tcl_Interp * interp,
     Tcl_GetChannelOption(interp, channel, "-encoding", &encoding);
     Tcl_SetChannelOption(interp, channel, "-translation", "binary");
 
+    paramListSet(requestData->request, "CONTENT_ENCODING", Tcl_NewStringObj(Tcl_DStringValue(&encoding), -1));
+
     /* ------------------------------------------------------------------------
      * how much to read ?
      * --------------------------------------------------------------------- */
@@ -198,6 +200,135 @@ int parseUrlEncodedFormData(RequestData * requestData, Tcl_Interp * interp,
 
 
 /* ----------------------------------------------------------------------------
+ * rawReadPostData --
+ *   store in web::request structure CONTENT_DATA and CONTENT_ENCODING
+ * ------------------------------------------------------------------------- */
+int rawReadPostData(RequestData * requestData, Tcl_Interp * interp,
+			    char *channelName, char *content_type, Tcl_Obj * len)
+{
+    Tcl_Obj *formData = NULL;
+    Tcl_Channel channel;
+    int mode;
+    int readToEnd = 0;
+    int content_length = 0;
+    Tcl_DString translation;
+    Tcl_DString encoding;
+
+    channel = Web_GetChannelOrVarChannel(interp, channelName, &mode);
+    if (channel == NULL) {
+	LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__,
+		"web::dispatch -postdata", WEBLOG_WARNING,
+		"error getting channel \"", channelName, "\"", NULL);
+	return TCL_ERROR;
+    }
+
+    if ((mode & TCL_READABLE) == 0) {
+
+	LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__,
+		"web::dispatch -postdata", WEBLOG_WARNING,
+		"channel \"", channelName, "\" not open for reading", NULL);
+
+	/* unregister if was a varchannel */
+	Web_UnregisterVarChannel(interp, channelName, channel);
+
+	return TCL_ERROR;
+    }
+
+    Tcl_DStringInit(&translation);
+    Tcl_DStringInit(&encoding);
+    Tcl_GetChannelOption(interp, channel, "-translation", &translation);
+    Tcl_GetChannelOption(interp, channel, "-encoding", &encoding);
+    Tcl_SetChannelOption(interp, channel, "-translation", "binary");
+
+    paramListSet(requestData->request, "CONTENT_ENCODING", Tcl_NewStringObj(Tcl_DStringValue(&encoding), -1));
+
+    /* ------------------------------------------------------------------------
+     * how much to read ?
+     * --------------------------------------------------------------------- */
+    if (len == NULL) {
+
+	readToEnd = 1;
+
+    }
+    else {
+
+	if (strcmp(Tcl_GetString(len), "end") == 0) {
+
+	    readToEnd = 1;
+
+	}
+	else {
+
+	    readToEnd = 0;
+
+	    if (Tcl_GetIntFromObj(interp, len, &content_length) != TCL_OK) {
+
+		Tcl_SetChannelOption(interp, channel, "-translation", Tcl_DStringValue(&translation));
+		Tcl_SetChannelOption(interp, channel, "-encoding", Tcl_DStringValue(&encoding));
+		Tcl_DStringFree(&translation);
+		Tcl_DStringFree(&encoding);
+		/* unregister if was a varchannel */
+		Web_UnregisterVarChannel(interp, channelName, channel);
+		return TCL_ERROR;
+	    }
+	}
+    }
+
+    /* ------------------------------------------------------------------------
+     * ok, read
+     * --------------------------------------------------------------------- */
+    formData = Tcl_NewObj();
+    Tcl_IncrRefCount(formData);
+
+    if (readToEnd) {
+
+	/* try to read to the end  */
+	/*                                         append flag */
+	while (Tcl_ReadChars(channel, formData, 4096, 1) != -1) {
+	    if (Tcl_Eof(channel))
+		break;
+	}
+
+    }
+    else {
+
+	if (Tcl_ReadChars(channel, formData, content_length, 1) == TCL_ERROR) {
+
+	    LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__,
+		    "web::dispatch -postdata", WEBLOG_WARNING,
+		    "error reading from \"", channelName, "\"", NULL);
+
+	    Tcl_DecrRefCount(formData);
+
+	    Tcl_SetChannelOption(interp, channel, "-translation", Tcl_DStringValue(&translation));
+	    Tcl_SetChannelOption(interp, channel, "-encoding", Tcl_DStringValue(&encoding));
+	    Tcl_DStringFree(&translation);
+	    Tcl_DStringFree(&encoding);
+	    /* unregister if was a varchannel */
+	    Web_UnregisterVarChannel(interp, channelName, channel);
+
+	    return TCL_ERROR;
+	}
+    }
+
+    Tcl_SetChannelOption(interp, channel, "-translation", Tcl_DStringValue(&translation));
+    Tcl_SetChannelOption(interp, channel, "-encoding", Tcl_DStringValue(&encoding));
+    Tcl_DStringFree(&translation);
+    Tcl_DStringFree(&encoding);
+    /* unregister if was a varchannel */
+    Web_UnregisterVarChannel(interp, channelName, channel);
+
+    if (paramListSet(requestData->request, "CONTENT_DATA", formData) != TCL_OK)
+        /* fatal case */
+        return TCL_ERROR;
+
+    Tcl_DecrRefCount(formData);
+
+    return TCL_OK;
+}
+
+
+/* ----------------------------------------------------------------------------
  * parseMultipartFormData
  * ------------------------------------------------------------------------- */
 int parseMultipartFormData(RequestData * requestData, Tcl_Interp * interp,
@@ -245,6 +376,8 @@ int parseMultipartFormData(RequestData * requestData, Tcl_Interp * interp,
     Tcl_GetChannelOption(interp, channel, "-translation", &translation);
     Tcl_GetChannelOption(interp, channel, "-encoding", &encoding);
     Tcl_SetChannelOption(interp, channel, "-translation", "binary");
+
+    paramListSet(requestData->request, "CONTENT_ENCODING", Tcl_NewStringObj(Tcl_DStringValue(&encoding), -1));
 
     res = mimeSplitMultipart(interp, channel, boundary, requestData);
 

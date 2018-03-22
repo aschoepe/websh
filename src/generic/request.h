@@ -142,6 +142,8 @@ int Web_ParseFormData(ClientData clientData,
 		      Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
 int parseMultipartFormData(RequestData * requestData, Tcl_Interp * interp,
 			   char *channelName, char *content_type);
+int rawReadPostData(RequestData * requestData, Tcl_Interp * interp,
+			    char *channelName, char *content_type, Tcl_Obj * len);
 int parseUrlEncodedFormData(RequestData * requestData, Tcl_Interp * interp,
 			    char *channelName, Tcl_Obj * len);
 char *mimeGetParamFromContDisp(const char *contentDisp, const char *name);
