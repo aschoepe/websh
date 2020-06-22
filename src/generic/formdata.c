@@ -21,6 +21,7 @@
 #include "log.h"
 #include "macros.h"
 #include "varchannel.h"
+#include "cJSON.h"
 
 
 /* ----------------------------------------------------------------------------
@@ -321,6 +322,38 @@ int rawReadPostData(RequestData * requestData, Tcl_Interp * interp,
     if (paramListSet(requestData->request, "CONTENT_DATA", formData) != TCL_OK)
         /* fatal case */
         return TCL_ERROR;
+
+    cJSON *pJSON;
+    pJSON = cJSON_Parse(Tcl_GetStringFromObj(formData, NULL));
+    if (pJSON == NULL)
+    {
+        const char *error_ptr = cJSON_GetErrorPtr();
+        if (error_ptr != NULL)
+        {
+            //fprintf(stderr, "Error before: %s\n", error_ptr);
+            LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__, "rawReadPostData", WEBLOG_INFO, "cJSON error before: ", error_ptr, NULL);
+        }
+    }
+    else
+    {
+        LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__, "rawReadPostData", WEBLOG_INFO, "cJSON parsing OK", NULL);
+        const cJSON *cmd = NULL, *sid = NULL;
+        cmd = cJSON_GetObjectItemCaseSensitive(pJSON, "cmd");
+        if (cJSON_IsString(cmd) && (cmd->valuestring != NULL))
+        {
+            //printf("cmd \"%s\"\n", cmd->valuestring);
+            LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__, "rawReadPostData", WEBLOG_INFO, "cJSON cmd: \"", cmd->valuestring, "\"", NULL);
+        }
+        sid = cJSON_GetObjectItemCaseSensitive(pJSON, "sid");
+        if (cJSON_IsNumber(sid))
+        {
+            //printf("sid %d\n", (int)sid->valuedouble);
+            char s[32];
+            snprintf(s, 32, "%d", (int)sid->valuedouble);
+            LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__, "rawReadPostData", WEBLOG_INFO, "cJSON sid: ", s, NULL);
+        }
+    }
+    cJSON_Delete(pJSON);
 
     Tcl_DecrRefCount(formData);
 

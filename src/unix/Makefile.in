@@ -54,7 +54,8 @@ web_OBJECTS = args.o \
 	varchannel.o \
 	modwebsh_cgi.o \
 	request_cgi.o \
-	response_cgi.o
+	response_cgi.o \
+	cJSON.o
 
 web_OBJECTS_ap = apchannel.o \
 	interpool.o \
