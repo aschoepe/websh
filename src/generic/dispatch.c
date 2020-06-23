@@ -301,6 +301,13 @@ int Web_Dispatch(ClientData clientData,
 	    cmdName = (Tcl_Obj *) getFromHashTable(requestData->paramList,
 						   Tcl_GetString(requestData->
 								 cmdTag));
+
+	    if (cmdName == NULL) {
+	        /* ----------------------------------------------------------------------
+	         * get command name from request POST_CMDTAG_JSON
+	         * ------------------------------------------------------------------- */
+		cmdName = (Tcl_Obj *) getFromHashTable(requestData->request, "POST_CMDTAG_JSON");
+	    }
 	}
 
 	/* ------------------------------------------------------------------------

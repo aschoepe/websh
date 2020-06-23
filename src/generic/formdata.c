@@ -21,6 +21,7 @@
 #include "log.h"
 #include "macros.h"
 #include "varchannel.h"
+#include "cJSON.h"
 
 
 /* ----------------------------------------------------------------------------
@@ -321,6 +322,36 @@ int rawReadPostData(RequestData * requestData, Tcl_Interp * interp,
     if (paramListSet(requestData->request, "CONTENT_DATA", formData) != TCL_OK)
         /* fatal case */
         return TCL_ERROR;
+
+    if (Tcl_StringCaseMatch(Tcl_GetString(getFromHashTable(requestData->request, "CONTENT_TYPE")), "application/json", TCL_MATCH_NOCASE)) {
+        cJSON *pJSON;
+        pJSON = cJSON_Parse(Tcl_GetStringFromObj(formData, NULL));
+        if (pJSON == NULL)
+        {
+            const char *error_ptr = cJSON_GetErrorPtr();
+            if (error_ptr != NULL)
+            {
+                LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__,
+                    "web::dispatch -postdata", WEBLOG_ERROR, "JSON error before: ", error_ptr, NULL);
+            }
+        }
+        else
+        {
+            const cJSON *cmd = NULL;
+            cmd = cJSON_GetObjectItemCaseSensitive(pJSON, Tcl_GetString(requestData->cmdTag));
+            if (cJSON_IsString(cmd) && (cmd->valuestring != NULL))
+            {
+                LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__,
+                    "web::dispatch -postdata", WEBLOG_DEBUG, "JSON found tag \"",
+                    Tcl_GetString(requestData->cmdTag), "\" = \"", cmd->valuestring, "\"", NULL);
+
+                if (paramListSet(requestData->request, "POST_CMDTAG_JSON", Tcl_NewStringObj(cmd->valuestring, -1)) != TCL_OK)
+                    /* fatal case */
+                    return TCL_ERROR;
+            }
+        }
+        cJSON_Delete(pJSON);
+    }
 
     Tcl_DecrRefCount(formData);
 
