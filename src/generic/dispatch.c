@@ -28,6 +28,26 @@
 int parsePostData(Tcl_Interp * interp, Tcl_Obj * name,
 		  Tcl_Obj * type, Tcl_Obj * len, RequestData * requestData);
 
+void httpHeaderCmdTag(char *src, char *dst)
+{
+    strcpy(dst, "HTTP_X_");
+    dst += strlen(dst);
+    while (*src != '\0')
+    {
+        if ((*src >= 'A' && *src <= 'Z') || (*src >= '0' && *src <= '9'))
+        {
+            *dst++ = *src++;
+            continue;
+        }
+        if (*src >= 'a' && *src <= 'z')
+        {
+            *dst++ = *src++ - 32;
+            continue;
+        }
+        *dst++ = '_', src++;
+    }
+    *dst = '\0';
+}
 
 /* ----------------------------------------------------------------------------
  * Web_Dispatch
@@ -304,9 +324,26 @@ int Web_Dispatch(ClientData clientData,
 
 	    if (cmdName == NULL) {
 	        /* ----------------------------------------------------------------------
+	         * get command name from HTTP header HTTP_<cmdTag>
+	         * ------------------------------------------------------------------- */
+		char *cmdTag, httpCmdTag[256];
+		cmdTag = Tcl_GetString(requestData->cmdTag);
+		if (strlen(cmdTag) + 7 < 255)
+		{
+                    httpHeaderCmdTag(cmdTag, httpCmdTag);
+		    cmdName = (Tcl_Obj *) getFromHashTable(requestData->request, httpCmdTag);
+		    if (cmdName != NULL)
+			LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__, "web::dispatch", WEBLOG_DEBUG, "using http header", NULL);
+		}
+	    }
+
+	    if (cmdName == NULL) {
+	        /* ----------------------------------------------------------------------
 	         * get command name from request POST_CMDTAG_JSON
 	         * ------------------------------------------------------------------- */
 		cmdName = (Tcl_Obj *) getFromHashTable(requestData->request, "POST_CMDTAG_JSON");
+		if (cmdName != NULL)
+		    LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__, "web::dispatch", WEBLOG_DEBUG, "using json", NULL);
 	    }
 	}
 
