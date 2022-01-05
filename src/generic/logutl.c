@@ -15,6 +15,9 @@
 
 #include <tcl.h>
 #include <time.h>
+#ifndef WIN32
+#  include <sys/time.h>
+#endif
 #ifdef WIN32
 #  include <string.h>
 #  include <process.h>
@@ -416,6 +419,7 @@ Tcl_Obj *formatMessage(LogLevel * level, char *fmt,
     Tcl_Obj *fmsg = NULL;
     int len = 0;
     char *cmsg = NULL;
+    int usec = 0, msec = 0;
 
     /* --------------------------------------------------------------------------
      * create
@@ -436,8 +440,14 @@ Tcl_Obj *formatMessage(LogLevel * level, char *fmt,
     }
 #else
     {
+        struct timeval tmnow;
+        gettimeofday(&tmnow, NULL);
+        usec = (int)tmnow.tv_usec;
+        msec = (int)tmnow.tv_usec / 1000 % 1000;
+
 	struct tm ts;
-	localtime_r(&t, &ts);
+	/* localtime_r(&t, &ts); */
+	localtime_r(&tmnow.tv_sec, &ts);
 	strftime(timeStr, sizeof(timeStr) - 1, fmt, &ts);
     }
 #endif
@@ -490,6 +500,14 @@ Tcl_Obj *formatMessage(LogLevel * level, char *fmt,
 		    break;
 		case 'f':
 		    Tcl_AppendToObj(fmsg, level->facility, -1);
+		    break;
+		case 'M':
+		    sprintf(tmpStr, "%03d", msec);
+		    Tcl_AppendToObj(fmsg, tmpStr, -1);
+		    break;
+		case 'U':
+		    sprintf(tmpStr, "%06d", usec);
+		    Tcl_AppendToObj(fmsg, tmpStr, -1);
 		    break;
 		case '$':
 		    Tcl_AppendToObj(fmsg, "$", 1);
