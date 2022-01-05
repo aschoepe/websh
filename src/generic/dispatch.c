@@ -345,6 +345,12 @@ int Web_Dispatch(ClientData clientData,
 		if (cmdName != NULL)
 		    LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__, "web::dispatch", WEBLOG_DEBUG, "using json", NULL);
 	    }
+
+	    if (cmdName == NULL) {
+                cmdName = (Tcl_Obj *) getFromHashTable(requestData->formVarList, Tcl_GetString(requestData-> cmdTag));
+		if (cmdName != NULL)
+		    LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__, "web::dispatch", WEBLOG_DEBUG, "using form var", NULL);
+            }
 	}
 
 	/* ------------------------------------------------------------------------
