@@ -85,6 +85,12 @@ int __declspec(dllexport) Websh_Init(Tcl_Interp * interp)
 	return TCL_ERROR;
 
     /* --------------------------------------------------------------------------
+     * random bytes generator
+     * ----------------------------------------------------------------------- */
+    if (randombytes_Init(interp) == TCL_ERROR)
+	return TCL_ERROR;
+
+    /* --------------------------------------------------------------------------
      * filecounter (needs to be after request_Init, because it needs requestData)
      * ----------------------------------------------------------------------- */
     if (filecounter_Init(interp) == TCL_ERROR)
@@ -155,6 +161,12 @@ int __declspec(dllexport) ModWebsh_Init(Tcl_Interp * interp)
     if (log_Init(interp) == TCL_ERROR) {
       return TCL_ERROR;
     }
+
+    /* --------------------------------------------------------------------------
+     * random bytes generator
+     * ----------------------------------------------------------------------- */
+    if (randombytes_Init(interp) == TCL_ERROR)
+	return TCL_ERROR;
 
     /* ---------------------------------------------------------------------
      * init callbacks

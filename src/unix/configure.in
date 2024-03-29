@@ -31,7 +31,7 @@ PACKAGE=web
 
 MAJOR_VERSION=3
 MINOR_VERSION=7
-PATCHLEVEL=1
+PATCHLEVEL=2
 
 VERSION=${MAJOR_VERSION}.${MINOR_VERSION}.${PATCHLEVEL}
 NODOT_VERSION=${MAJOR_VERSION}${MINOR_VERSION}${PATCHLEVEL}
@@ -457,6 +457,37 @@ fi
 AC_SUBST(TCL_LIB_SPEC)
 AC_SUBST(TCLSH_PROG)
 AC_SUBST(TCL_PACKAGE_PATH)
+
+#--------------------------------------------------------------------
+# Check for getrandom() sys/random.h, /dev/random and /dev/urandom
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING([for sys/random.h in standard locations])
+
+found_sys_random_h=no
+for dir in /usr/include/*-linux-gnu/sys /usr/include/linux; do
+    if test -f "$dir/random.h"; then
+        AC_DEFINE([HAVE_GETRANDOM], [1], [Define to 1 if you have the <sys/random.h> header file.])
+        TCL_DEFS="$TCL_DEFS -DHAVE_GETRANDOM=1"
+        AC_MSG_RESULT([found in $dir])
+        found_sys_random_h=yes
+        break
+    fi
+done
+
+if test "$found_sys_random_h" = no; then
+    AC_MSG_RESULT([not found])
+fi
+
+AC_CHECK_FILE([/dev/random],
+  [AC_DEFINE([HAVE_DEVICE_RANDOM], [1], [Define to 1 if you have /dev/random.]) TCL_DEFS="$TCL_DEFS -DHAVE_DEVICE_RANDOM=1"]
+)
+
+AC_CHECK_FILE([/dev/urandom],
+  [AC_DEFINE([HAVE_DEVICE_URANDOM], [1], [Define to 1 if you have /dev/urandom.]) TCL_DEFS="$TCL_DEFS -DHAVE_DEVICE_URANDOM=1"]
+)
+
+AC_SUBST(TCL_DEFS)
 
 #--------------------------------------------------------------------
 # Finally, substitute all of the various values into the Makefile.

@@ -17,7 +17,7 @@ TOP_DIR = ..
 lib_BINARIES=$(web_LIB_FILE)
 BINARIES=$(lib_BINARIES)
 
-SCRIPT_SOURCES = ../generic/context.tcl ../generic/script.ws3 ../generic/cookie.ws3 ../generic/sessctx.ws3 
+SCRIPT_SOURCES = ../generic/context.tcl ../generic/script.ws3 ../generic/cookie.ws3 ../generic/sessctx.ws3 ../generic/filerandom.tcl ../generic/genpasswd.tcl ../generic/webutils.tcl ../generic/jwt.tcl
 
 web_OBJECTS = args.o \
 	cfg.o \
@@ -55,7 +55,8 @@ web_OBJECTS = args.o \
 	modwebsh_cgi.o \
 	request_cgi.o \
 	response_cgi.o \
-	cJSON.o
+	cJSON.o \
+        randombytes.o
 
 web_OBJECTS_ap = apchannel.o \
 	interpool.o \

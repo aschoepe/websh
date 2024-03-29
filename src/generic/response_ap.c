@@ -63,12 +63,15 @@ int apHeaderHandler(Tcl_Interp * interp, ResponseObj * responseObj,
 	  /* 404 not found */
 	  char *response = strchr(Tcl_GetString(httpResponse), (int) ' ');
 	  /* _not found */
-	  if (response)
 #ifndef APACHE2
+	  if (response) {
 	      /* not found */
 		r->status_line = ap_pstrdup(r->pool, ++response);
+          }
 #else /* APACHE2 */
+	  if (response) {
 		r->status_line = (char *) apr_pstrdup(r->pool, ++response);
+          }
 		/* as of Apache 2.2.1, r->status_line must be in line with
 		   r->status, therefore r->status must be set too */
 		if (strlen(response) > 3) {
