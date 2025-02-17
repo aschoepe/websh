@@ -114,7 +114,6 @@ int requestFillRequestValues_AP(Tcl_Interp * interp, RequestData * requestData)
 
 	char *decoded_line;
 	int length;
-
 	/* check if we know how to handle the Auth string */
 	if (!strcasecmp((char *)ap_getword(r->pool, &auth_line, ' '), "Basic")) {
 
@@ -147,6 +146,28 @@ int requestFillRequestValues_AP(Tcl_Interp * interp, RequestData * requestData)
 
       }
 
+    }
+    {
+      const char *auth_line;
+
+      /* Check to see if a Authorization header is there */
+#ifndef APACHE2
+      auth_line = (char *)ap_table_get(r->headers_in, "Authorization");
+#else /* APACHE2 */
+      auth_line = (char *)apr_table_get(r->headers_in, "Authorization");
+#endif
+      if (auth_line) {
+	/* Check to see if a Authorization header Bearer is there */
+	if (!strcasecmp((char *)ap_getword(r->pool, &auth_line, ' '), "Bearer")) {
+	  /* Skip leading spaces. */
+	  while (isspace((int)*auth_line)) {
+	    auth_line++;
+	  }
+	  /* save Bearer-Token in AUTH_BEARER */
+	  if (paramListAdd(requestData->request, "AUTH_BEARER", Tcl_NewStringObj(auth_line, -1)) != TCL_OK)
+	    return TCL_ERROR;
+	  }
+	}
     }
 
     return TCL_OK;
