@@ -1,0 +1,99 @@
+#!/usr/bin/env websh
+#
+# sse-dispatch.ws3 -- SSE example using the web::command / web::dispatch pattern
+#
+# Demonstrates:
+#   - web::command + web::dispatch for request routing
+#   - web::sseStart / web::sseSend for real-time streaming
+#   - catch block to detect client disconnect
+#   - done event carrying a JSON result
+#
+# Usage:
+#   GET sse-dispatch.ws3?command=sse            -- simple progress stream (5 steps)
+#   GET sse-dispatch.ws3?command=sseRun&job=X   -- long-running job with phases
+
+package require websh
+
+web::config cmdparam command
+web::config encryptchain {}
+
+# -------------------- SSE commands --------------------
+
+# Simple SSE demo: sends periodic JSON progress events.
+#
+# Correct pattern:
+#   web::sseStart   -- set Content-Type + disable buffering (once, at the very start)
+#   web::sseSend    -- write one event and flush immediately
+#   No web::response -reset between events.
+
+web::command sse {
+    web::sseStart
+
+    set eventId 1
+
+    # Connection confirmation
+    web::sseSend "{\"ts\":\"[web::ts]\",\"msg\":\"Connected\"}" connect $eventId
+    incr eventId
+
+    # Progress events, one per 1.5 s
+    for {set step 1} {$step <= 5} {incr step} {
+        after 1500
+        web::sseSend \
+            "{\"ts\":\"[web::ts]\",\"step\":$step,\"total\":5}" \
+            progress $eventId
+        incr eventId
+    }
+
+    # Final event – client can close the EventSource on receipt
+    web::sseSend "{\"ts\":\"[web::ts]\",\"success\":true}" done $eventId
+}
+
+# Long-running job pattern with client-disconnect detection.
+#
+# The job body runs inside a catch block.  When the client disconnects,
+# web::sseSend throws an error and catch stops the loop immediately.
+
+web::command sseRun {
+    set job [web::param job "demo"]
+
+    web::sseStart
+
+    set eventId 1
+
+    web::sseSend \
+        "{\"ts\":\"[web::ts]\",\"job\":\"$job\",\"msg\":\"Started\"}" \
+        start $eventId
+    incr eventId
+
+    if {[catch {
+        # Replace this loop with your actual job logic.
+        # Call web::sseSend after each phase to report progress.
+
+        foreach phase {Preparation Processing Completion} {
+            after 2000
+            web::sseSend \
+                "{\"ts\":\"[web::ts]\",\"phase\":\"$phase\"}" \
+                progress $eventId
+            incr eventId
+        }
+
+        web::sseSend \
+            "{\"ts\":\"[web::ts]\",\"success\":true,\"msg\":\"Job $job complete\"}" \
+            done $eventId
+
+    } err]} {
+        # Client disconnected or other error – nothing left to send
+        web::log error "sseRun: $err"
+    }
+}
+
+# -------------------- Default --------------------
+
+web::command default {
+    web::response -httpresponse "HTTP/1.1 400 Bad Request"
+    web::put "Unknown command. Use ?command=sse or ?command=sseRun\n"
+}
+
+# -------------------- Dispatch --------------------
+
+web::dispatch

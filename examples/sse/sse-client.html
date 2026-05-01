@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>websh SSE Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; max-width: 800px; }
+        h1   { font-size: 1.4em; }
+
+        .controls { margin: 12px 0; }
+        .controls button {
+            padding: 8px 16px;
+            margin-right: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        #eStatus {
+            font-style: italic;
+            color: #555;
+            margin: 8px 0;
+        }
+
+        #eEvents {
+            border: 1px solid #ccc;
+            padding: 8px;
+            height: 320px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .ev-row {
+            margin: 3px 0;
+            padding: 4px 6px;
+            background: #fff;
+            border-left: 3px solid #888;
+        }
+        .ev-connect  { border-color: #4CAF50; }
+        .ev-start    { border-color: #FF9800; }
+        .ev-progress { border-color: #2196F3; }
+        .ev-done     { border-color: #9C27B0; }
+        .ev-error    { border-color: #f44336; }
+
+        .ev-type { font-weight: bold; margin-right: 8px; }
+        .ev-id   { color: #999; font-size: 11px; margin-right: 8px; }
+    </style>
+</head>
+<body>
+    <h1>websh Server-Sent Events Demo</h1>
+
+    <div class="controls">
+        <button onclick="sseConnect('sse');" title="5 progress steps, 1.5 s apart">Simple (5 steps)</button>
+        <button onclick="sseConnect('sseRun', 'demo');" title="3 named phases, 2 s each">Long job (3 phases)</button>
+        <button id="btnStop" onclick="sseStop();" disabled>Stop</button>
+        <button onclick="document.getElementById('eEvents').innerHTML='';">Clear</button>
+    </div>
+    <div style="font-size:12px; color:#777; margin-bottom:8px;">
+        <b>Simple</b>: sends 5 progress events then done &nbsp;|&nbsp;
+        <b>Long job</b>: simulates a multi-phase job with named phases then done
+    </div>
+
+    <div id="eStatus">Not connected</div>
+    <div id="eEvents"></div>
+
+    <script>
+        "use strict";
+
+        const sseApi = "sse-dispatch.ws3";
+        let evtSource = null;
+
+        function sseConnect(command, job) {
+            sseStop();
+
+            let url = sseApi + "?command=" + command;
+            if (job) url += "&job=" + encodeURIComponent(job);
+
+            evtSource = new EventSource(url);
+            document.getElementById("btnStop").disabled = false;
+            setStatus("Connecting ...");
+
+            ["connect", "start", "progress", "done"].forEach(function(type) {
+                evtSource.addEventListener(type, function(e) {
+                    addEvent(type, e.lastEventId, e.data);
+                    if (type === "done") {
+                        setStatus("Done");
+                        sseStop();
+                    }
+                });
+            });
+
+            evtSource.onopen = function() { setStatus("Connected"); };
+
+            evtSource.onerror = function() {
+                addEvent("error", "", "Connection error or closed");
+                setStatus("Error / disconnected");
+                sseStop();
+            };
+        }
+
+        function sseStop() {
+            if (evtSource) { evtSource.close(); evtSource = null; }
+            document.getElementById("btnStop").disabled = true;
+        }
+
+        function addEvent(type, id, data) {
+            const container = document.getElementById("eEvents");
+            const row = document.createElement("div");
+            row.className = "ev-row ev-" + type;
+
+            // Pretty-print if data is valid JSON
+            let display = data;
+            try { display = JSON.stringify(JSON.parse(data), null, 1); } catch(e) {}
+
+            row.innerHTML =
+                '<span class="ev-type">' + esc(type) + '</span>' +
+                '<span class="ev-id">#' + esc(id || "-") + '</span>' +
+                '<span class="ev-data">' + esc(display) + '</span>';
+
+            container.appendChild(row);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function setStatus(msg) {
+            document.getElementById("eStatus").innerText = msg;
+        }
+
+        function esc(s) {
+            const d = document.createElement("div");
+            d.textContent = String(s);
+            return d.innerHTML;
+        }
+    </script>
+</body>
+</html>
