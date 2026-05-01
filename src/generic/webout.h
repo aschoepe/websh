@@ -40,10 +40,14 @@ typedef int (ResponseHeaderHandler) (Tcl_Interp * interp,
 				     struct ResponseObj * responseObj,
 				     Tcl_Obj * out);
 
+typedef int (ResponseFlushHandler) (Tcl_Interp * interp,
+				    struct ResponseObj * responseObj);
+
 typedef struct ResponseObj
 {
     int sendHeader;
     ResponseHeaderHandler *headerHandler;
+    ResponseFlushHandler  *flushHandler;
     long bytesSent;
     Tcl_HashTable *headers;
     Tcl_Obj *name;

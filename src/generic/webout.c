@@ -213,10 +213,11 @@ int Web_Response(ClientData clientData, Tcl_Interp * interp,
 	"-httpresponse",
 	"-reset",
 	"-resetall",
+	"-flush",
 	NULL
     };
     enum params
-    { SENDHEADER, SELECT, BYTESSENT, HTTPRESPONSE, RESET, RESETALL };
+    { SENDHEADER, SELECT, BYTESSENT, HTTPRESPONSE, RESET, RESETALL, FLUSH };
 
     /* --------------------------------------------------------------------------
      * sanity
@@ -398,6 +399,28 @@ int Web_Response(ClientData clientData, Tcl_Interp * interp,
 			if (current)
 			    Tcl_DecrRefCount(current);
 		    }
+		    return TCL_OK;
+		    break;
+		}
+	    case FLUSH:{
+		    Tcl_Channel channel;
+		    WebAssertObjc(objc != 2, 2, NULL);
+
+		    channel = getChannel(interp, responseObj);
+		    if (channel == NULL) {
+			Tcl_SetResult(interp, "cannot get channel for flush", TCL_STATIC);
+			return TCL_ERROR;
+		    }
+
+		    if (Tcl_Flush(channel) != TCL_OK) {
+			Tcl_SetResult(interp, "error flushing channel", TCL_STATIC);
+			return TCL_ERROR;
+		    }
+
+		    if (responseObj->flushHandler != NULL) {
+			responseObj->flushHandler(interp, responseObj);
+		    }
+
 		    return TCL_OK;
 		    break;
 		}

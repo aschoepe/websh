@@ -149,11 +149,27 @@ int apHeaderHandler(Tcl_Interp * interp, ResponseObj * responseObj,
 }
 
 /* ----------------------------------------------------------------------------
+ * apFlushHandler -- call ap_rflush to push data through Apache's filter chain
+ * ------------------------------------------------------------------------- */
+static int apFlushHandler(Tcl_Interp * interp, ResponseObj * responseObj)
+{
+    request_rec *r = (request_rec *) Tcl_GetAssocData(interp, WEB_AP_ASSOC_DATA, NULL);
+    if (r != NULL) {
+	ap_rflush(r);
+    }
+    return TCL_OK;
+}
+
+/* ----------------------------------------------------------------------------
  * createDefaultResponseObj
  * ------------------------------------------------------------------------- */
 ResponseObj *createDefaultResponseObj_AP(Tcl_Interp * interp)
 {
-    return createResponseObj(interp, APCHANNEL, &apHeaderHandler);
+    ResponseObj *obj = createResponseObj(interp, APCHANNEL, &apHeaderHandler);
+    if (obj != NULL) {
+	obj->flushHandler = apFlushHandler;
+    }
+    return obj;
 }
 
 /* ----------------------------------------------------------------------------

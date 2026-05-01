@@ -85,7 +85,7 @@ proc web::sessionNew { {timeout 3600000} {subject subject} {audience audience} {
     ${sessionContext}::cset session(nbf) [set nbf $ms]
     ${sessionContext}::cset session(iat) [set iat $ms]
     ${sessionContext}::cset session(jti) [set jti [${sessionContext}::id]]
-    ${sessionContext}::cset session(mlt) [set mlt [expr {$ms + $maxlifetime}]]
+    ${sessionContext}::cset session(mlt) [set mlt $maxlifetime]
 
     web::response -set X-Session [subst -nobackslashes -nocommands {{"iss":"$iss","sub":"$sub","aud":"$aud","exp":$exp,"nbf":$nbf,"iat":$iat,"jti":"$jti","mlt":$mlt}}]
 
@@ -106,7 +106,7 @@ proc web::sessionNew { {timeout 3600000} {subject subject} {audience audience} {
   return {}
 }
 
-# uuid for testing only, not needed in real life
+# uuid for testing only, not needed in real life - delivered over AUTH_BEARER
 proc web::sessionInit { {uuid {}} } {
   variable configContext
   variable sessionContext
@@ -131,8 +131,12 @@ proc web::sessionInit { {uuid {}} } {
   set ms [clock milliseconds]
   web::log info "ms $ms"
   foreach tag {exp mlt} {
-    set tm [${sessionContext}::cget session($tag) 0]
-  web::log info "$tag $ms > $tm [expr {$ms - $tm}]"
+    if {$tag eq {mlt}} {
+      set tm [expr {[${sessionContext}::cget session(iat) 0] + [${sessionContext}::cget session($tag) 0]}]
+    } else {
+      set tm [${sessionContext}::cget session($tag) 0]
+    }
+    web::log info "$tag $ms > $tm [expr {$ms - $tm}]"
     if {$tm > 0 && $ms > $tm} {
       set sessionActive false
       break
@@ -256,4 +260,29 @@ proc web::returnBinary { mimetype data filename } {
   web::response -set Expires 0
   web::put $data
   web::response -reset
+}
+
+proc web::sseStart {} {
+  web::response -set Content-Type text/event-stream
+  web::response -set Cache-Control no-cache
+  web::response -set Connection keep-alive
+  web::response -set X-Accel-Buffering no
+  fconfigure [web::response] -buffering none -buffersize 0
+}
+
+proc web::sseSend { data {event {}} {id {}} {retry {}} } {
+  if {$retry ne {}} {
+    web::put "retry: $retry\n"
+  }
+  if {$id ne {}} {
+    web::put "id: $id\n"
+  }
+  if {$event ne {}} {
+    web::put "event: $event\n"
+  }
+  foreach line [split $data \n] {
+    web::put "data: $line\n"
+  }
+  web::put "\n"
+  web::response -flush
 }

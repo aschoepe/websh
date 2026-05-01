@@ -180,6 +180,7 @@ ResponseObj __declspec(dllexport) *createResponseObj(Tcl_Interp * interp, char *
     responseObj->name = Tcl_NewStringObj(channelName, -1);
     responseObj->httpresponse = NULL;
     responseObj->headerHandler = headerHandler;
+    responseObj->flushHandler = NULL;
 
     Tcl_IncrRefCount(responseObj->name);	/* it's mine */
 
