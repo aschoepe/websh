@@ -68,7 +68,7 @@ web_OBJECTS_ap = apchannel.o \
 
 OBJECTS = $(web_OBJECTS)
 
-web_LIB_FILE = libwebsh3.7.3.so
+web_LIB_FILE = libwebsh3.7.4.so
 $(web_LIB_FILE)_OBJECTS = $(web_OBJECTS)
 
 # =============================================================================
@@ -91,7 +91,7 @@ docdir = $(sharedir)/htdocs
 cfgdir = $(sharedir)/conf
 
 PACKAGE = web
-VERSION = 3.7.3
+VERSION = 3.7.4
 CC = cc
 CFLAGS_DEBUG = -g
 CFLAGS_DEFAULT = -O2
@@ -125,7 +125,7 @@ TCL_EXTRA_CFLAGS =  -pipe
 TCL_LD_FLAGS =  -Wl,--export-dynamic 
 TCL_LIBS = -ldl -lz  -lpthread -lm
 TCL_SHLIB_LD_LIBS = ${LIBS}
-TCL_SRC_DIR = /usr/local/src/tcltk8616/tcl8.6.16
+TCL_SRC_DIR = /root/src/tcl8.6.17
 TCL_DBGX = 
 TCL_STUB_LIB_FILE = libtclstub8.6.a
 TCL_STUB_LIB_SPEC = -L/usr/local/tcl86/lib -ltclstub8.6
@@ -137,9 +137,9 @@ TCL_PACKAGE_PATH = /usr/local/tcl86/lib
 # Tcl memory and checkmem commands in mod_websh
 #MEM_DEBUG_FLAGS = -DTCL_MEM_DEBUG
 
-SHARED_LIB_SUFFIX = 3.7.3.so
+SHARED_LIB_SUFFIX = 3.7.4.so
 MODULE_LIB_SUFFIX = $(VERSION).so
-UNSHARED_LIB_SUFFIX = 3.7.3.a
+UNSHARED_LIB_SUFFIX = 3.7.4.a
 
 HTTPD_INCLUDES = -I"/usr/include/apache2" -I"/usr/include/apr-1.0"
 # needed for Darwin (OS X) only
@@ -158,7 +158,7 @@ EXTRA_CFLAGS = $(FIXED_TCL_DEFS) $(PROTO_FLAGS) $(SECURITY_FLAGS) \
 	$(MEM_DEBUG_FLAGS) $(KEYSYM_FLAGS) $(NO_DEPRECATED_FLAGS) \
 	$(TCL_EXTRA_CFLAGS)
 
-DEFS = -DVERSION=\"3.7.3\" -DSYSV=1 -DUSE_TCL_STUBS=1 $(EXTRA_CFLAGS)
+DEFS = -DVERSION=\"3.7.4\" -DSYSV=1 -DUSE_TCL_STUBS=1 $(EXTRA_CFLAGS)
 
 ACLOCAL_M4 = $(srcdir)/aclocal.m4
 
