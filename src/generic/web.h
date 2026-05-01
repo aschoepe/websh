@@ -30,6 +30,7 @@
 #include "request.h"
 #include "cfg.h"
 #include "filecounter.h"
+#include "randombytes.h"
 #include "modwebsh.h"
 
 int __declspec(dllexport) Websh_Init(Tcl_Interp * interp);
