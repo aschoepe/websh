@@ -639,6 +639,8 @@ ac_includes_default="\
 
 ac_header_c_list=
 ac_subst_vars='LTLIBOBJS
+SYSTEMCTL_APACHE
+LDCONFIG
 TCLSH_PROG
 TCL_DBGX
 SHLIB_LDFLAGS
@@ -9454,6 +9456,29 @@ printf "%s\n" "#define HAVE_DEVICE_URANDOM 1" >>confdefs.h
      TCL_DEFS="$TCL_DEFS -DHAVE_DEVICE_URANDOM=1"
 fi
 
+
+
+
+#--------------------------------------------------------------------
+# Linux post-install helpers (ldconfig, systemctl)
+#--------------------------------------------------------------------
+
+LDCONFIG=
+SYSTEMCTL_APACHE=
+case "`uname -s`" in
+Linux*)
+    for f in /sbin/ldconfig /usr/sbin/ldconfig; do
+        if test -x "$f"; then LDCONFIG="$f -X"; break; fi
+    done
+    if command -v systemctl >/dev/null 2>&1; then
+        for svc in apache2 httpd; do
+            if systemctl cat ${svc} >/dev/null 2>&1; then
+                SYSTEMCTL_APACHE="systemctl restart ${svc}"; break
+            fi
+        done
+    fi
+    ;;
+esac
 
 
 

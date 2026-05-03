@@ -355,6 +355,29 @@ AC_CHECK_FILE([/dev/urandom],
 AC_SUBST(TCL_DEFS)
 
 #--------------------------------------------------------------------
+# Linux post-install helpers (ldconfig, systemctl)
+#--------------------------------------------------------------------
+
+LDCONFIG=
+SYSTEMCTL_APACHE=
+case "`uname -s`" in
+Linux*)
+    for f in /sbin/ldconfig /usr/sbin/ldconfig; do
+        if test -x "$f"; then LDCONFIG="$f -X"; break; fi
+    done
+    if command -v systemctl >/dev/null 2>&1; then
+        for svc in apache2 httpd; do
+            if systemctl cat ${svc} >/dev/null 2>&1; then
+                SYSTEMCTL_APACHE="systemctl restart ${svc}"; break
+            fi
+        done
+    fi
+    ;;
+esac
+AC_SUBST(LDCONFIG)
+AC_SUBST(SYSTEMCTL_APACHE)
+
+#--------------------------------------------------------------------
 # Generate output files
 #--------------------------------------------------------------------
 

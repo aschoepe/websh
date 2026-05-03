@@ -5,3 +5,4 @@ src/unix/autom4te.cache/*
 src/unix/config.log
 src/unix/config.status
 src/unix/script.h
+src/unix/configure~

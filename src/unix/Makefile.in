@@ -21,6 +21,8 @@ BINARIES=$(lib_BINARIES)
 APACHE_TARGET = @APACHE_TARGET@
 # Set by configure: "install-libraries" when --enable-apache, empty otherwise
 INSTALL_APACHE = @INSTALL_APACHE@
+LDCONFIG = @LDCONFIG@
+SYSTEMCTL_APACHE = @SYSTEMCTL_APACHE@
 
 SCRIPT_SOURCES = ../generic/context.tcl ../generic/script.ws3 ../generic/cookie.ws3 ../generic/sessctx.ws3 ../generic/filerandom.tcl ../generic/genpasswd.tcl ../generic/webutils.tcl ../generic/jwt.tcl
 
@@ -352,6 +354,7 @@ install-binaries: install-dirs binaries
 	ln -sf websh$(VERSION)/libwebsh$(SHARED_LIB_SUFFIX) $(libdir)/libwebsh$(SHARED_LIB_SUFFIX)
 	rm -f $(libdir)/libwebsh.so
 	ln -sf libwebsh$(SHARED_LIB_SUFFIX) $(libdir)/libwebsh.so
+	-test -z "$(LDCONFIG)" || $(LDCONFIG)
 
 # mod_websh (only when --enable-apache / Apache headers found)
 install-libraries: install-dirs libraries
@@ -361,6 +364,7 @@ install-libraries: install-dirs libraries
 	ln -sf mod_websh$(VERSION).so $(moddir)/mod_websh.so
 	rm -f $(moddir)/libwebsh$(SHARED_LIB_SUFFIX)
 	ln -sf $(pkgdir)/libwebsh$(SHARED_LIB_SUFFIX) $(moddir)/libwebsh$(SHARED_LIB_SUFFIX)
+	-test -z "$(SYSTEMCTL_APACHE)" || $(SYSTEMCTL_APACHE)
 
 # documentation / sample mod_websh setup
 install-doc: install-dirs
