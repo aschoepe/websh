@@ -241,7 +241,25 @@ int rawReadPostData(RequestData * requestData, Tcl_Interp * interp,
     Tcl_GetChannelOption(interp, channel, "-encoding", &encoding);
     Tcl_SetChannelOption(interp, channel, "-translation", "binary");
 
-    paramListSet(requestData->request, "CONTENT_ENCODING", Tcl_NewStringObj(Tcl_DStringValue(&encoding), -1));
+    /* Derive CONTENT_ENCODING from the charset in Content-Type, falling back to
+       iso8859-1 (the HTTP/1.1 default) rather than the channel's locale encoding. */
+    {
+        const char *charset_enc = "iso8859-1";
+        if (content_type != NULL) {
+            const char *cs = strstr(content_type, "charset=");
+            if (cs != NULL) {
+                cs += 8;
+                if (*cs == '"') cs++;
+                Tcl_DStringFree(&encoding);
+                Tcl_DStringInit(&encoding);
+                while (*cs && *cs != '"' && *cs != ';' && *cs != ' ')
+                    Tcl_DStringAppend(&encoding, cs++, 1);
+                charset_enc = Tcl_DStringValue(&encoding);
+            }
+        }
+        paramListSet(requestData->request, "CONTENT_ENCODING",
+                     Tcl_NewStringObj(charset_enc, -1));
+    }
 
     /* ------------------------------------------------------------------------
      * how much to read ?
@@ -323,34 +341,41 @@ int rawReadPostData(RequestData * requestData, Tcl_Interp * interp,
         /* fatal case */
         return TCL_ERROR;
 
-    if (Tcl_StringCaseMatch(Tcl_GetString(getFromHashTable(requestData->request, "CONTENT_TYPE")), "application/json", TCL_MATCH_NOCASE)) {
-        cJSON *pJSON;
-        pJSON = cJSON_Parse(Tcl_GetStringFromObj(formData, NULL));
-        if (pJSON == NULL)
-        {
-            const char *error_ptr = cJSON_GetErrorPtr();
-            if (error_ptr != NULL)
+    {
+        Tcl_Obj *contentTypeObj = (Tcl_Obj *)getFromHashTable(requestData->request, "CONTENT_TYPE");
+        if (contentTypeObj != NULL &&
+            Tcl_StringCaseMatch(Tcl_GetString(contentTypeObj), "application/json", TCL_MATCH_NOCASE)) {
+            cJSON *pJSON;
+            pJSON = cJSON_Parse(Tcl_GetStringFromObj(formData, NULL));
+            if (pJSON == NULL)
             {
-                LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__,
-                    "web::dispatch -postdata", WEBLOG_ERROR, "JSON error before: ", error_ptr, NULL);
+                const char *error_ptr = cJSON_GetErrorPtr();
+                if (error_ptr != NULL)
+                {
+                    LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__,
+                        "web::dispatch -postdata", WEBLOG_ERROR, "JSON error before: ", error_ptr, NULL);
+                }
             }
-        }
-        else
-        {
-            const cJSON *cmd = NULL;
-            cmd = cJSON_GetObjectItemCaseSensitive(pJSON, Tcl_GetString(requestData->cmdTag));
-            if (cJSON_IsString(cmd) && (cmd->valuestring != NULL))
+            else
             {
-                LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__,
-                    "web::dispatch -postdata", WEBLOG_DEBUG, "JSON found tag \"",
-                    Tcl_GetString(requestData->cmdTag), "\" = \"", cmd->valuestring, "\"", NULL);
+                const cJSON *cmd = NULL;
+                if (requestData->cmdTag != NULL)
+                    cmd = cJSON_GetObjectItemCaseSensitive(pJSON, Tcl_GetString(requestData->cmdTag));
+                if (cJSON_IsString(cmd) && (cmd->valuestring != NULL))
+                {
+                    LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__,
+                        "web::dispatch -postdata", WEBLOG_DEBUG, "JSON found tag \"",
+                        Tcl_GetString(requestData->cmdTag), "\" = \"", cmd->valuestring, "\"", NULL);
 
-                if (paramListSet(requestData->request, "POST_CMDTAG_JSON", Tcl_NewStringObj(cmd->valuestring, -1)) != TCL_OK)
-                    /* fatal case */
-                    return TCL_ERROR;
+                    if (paramListSet(requestData->request, "POST_CMDTAG_JSON", Tcl_NewStringObj(cmd->valuestring, -1)) != TCL_OK)
+                        /* fatal case */ {
+                        cJSON_Delete(pJSON);
+                        return TCL_ERROR;
+                    }
+                }
             }
+            cJSON_Delete(pJSON);
         }
-        cJSON_Delete(pJSON);
     }
 
     Tcl_DecrRefCount(formData);
@@ -436,7 +461,6 @@ int mimeSplitMultipart(Tcl_Interp * interp, Tcl_Channel channel,
     Tcl_Obj *bdy = NULL;
     int isLast = TCL_ERROR;
     long upLoadFileSize = 0;
-    long bytesWritten = 0;
     long bytesSkipped = 0;
     Tcl_Obj *tmpFileName = NULL;
 
@@ -516,7 +540,6 @@ int mimeSplitMultipart(Tcl_Interp * interp, Tcl_Channel channel,
 		    return TCL_ERROR;
 		}
 
-		bytesWritten = 0;
 		bytesSkipped = 0;
 
 		tmpFileName = tempFileName(interp, requestData, NULL, NULL);
@@ -529,10 +552,9 @@ int mimeSplitMultipart(Tcl_Interp * interp, Tcl_Channel channel,
 		    return TCL_ERROR;
 		}
 
-		bytesWritten =
-		    readAndDumpBody(interp, channel, boundary, &isLast,
-				    tmpFileName, upLoadFileSize,
-				    requestData->filePermissions, &bytesSkipped);
+		(void)readAndDumpBody(interp, channel, boundary, &isLast,
+				      tmpFileName, upLoadFileSize,
+				      requestData->filePermissions, &bytesSkipped);
 
 		if (fileNameLen > 0) {
 

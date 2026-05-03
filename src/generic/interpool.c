@@ -127,7 +127,7 @@ WebInterp *createWebInterp(websh_server_conf * conf,
 	return NULL;
     }
 
-    /* just to be sure the memory command is imported if 
+    /* just to be sure the memory command is imported if
        the corresponding Tcl features it */
 #ifdef TCL_MEM_DEBUG
     Tcl_InitMemory(webInterp->interp);
@@ -135,7 +135,13 @@ WebInterp *createWebInterp(websh_server_conf * conf,
 
     /* now register here all websh modules */
     result = Tcl_Init(webInterp->interp);
-    /* checkme: test result */
+    if (result != TCL_OK) {
+#ifdef APACHE2
+	ap_log_error(APLOG_MARK, APLOG_ERR, 0, conf->server,
+		     "createWebInterp: Tcl_Init failed for %s", filename);
+#endif
+	return NULL;
+    }
 
     apFuncs = Tcl_GetAssocData(conf->mainInterp, WEB_APFUNCS_ASSOC_DATA, NULL);
     if (apFuncs == NULL)
@@ -143,6 +149,13 @@ WebInterp *createWebInterp(websh_server_conf * conf,
     Tcl_SetAssocData(webInterp->interp, WEB_APFUNCS_ASSOC_DATA, NULL, (ClientData *) apFuncs);
 
     result = Websh_Init(webInterp->interp);
+    if (result != TCL_OK) {
+#ifdef APACHE2
+	ap_log_error(APLOG_MARK, APLOG_ERR, 0, conf->server,
+		     "createWebInterp: Websh_Init failed for %s", filename);
+#endif
+	return NULL;
+    }
 
     /* also register the destrcutor, etc. functions, passing webInterp as
        client data */

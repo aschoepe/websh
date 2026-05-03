@@ -34,7 +34,6 @@ int __declspec(dllexport) log_Init(Tcl_Interp * interp)
     LogPlugIn *logtochannel = NULL;
     LogPlugIn *logtocmd = NULL;
     LogPlugIn *logtosyslog = NULL;
-    int ires = 0;
 
     /* --------------------------------------------------------------------------
      * interpreter running ?
@@ -85,7 +84,8 @@ int __declspec(dllexport) log_Init(Tcl_Interp * interp)
     logtochannel->destructor = destroyLogToChannel;
     logtochannel->handler = logToChannel;
 
-    ires = registerLogPlugIn(interp, "channel", logtochannel);
+    if (registerLogPlugIn(interp, "channel", logtochannel) != TCL_OK)
+	return TCL_ERROR;
 
     /* --------------------------------------------------------------------------
      * register log handler "file"
@@ -97,7 +97,8 @@ int __declspec(dllexport) log_Init(Tcl_Interp * interp)
     logtofile->destructor = destroyLogToFile;
     logtofile->handler = logToFile;
 
-    ires = registerLogPlugIn(interp, "file", logtofile);
+    if (registerLogPlugIn(interp, "file", logtofile) != TCL_OK)
+	return TCL_ERROR;
 
     /* --------------------------------------------------------------------------
      * register log handler "command"
@@ -105,24 +106,26 @@ int __declspec(dllexport) log_Init(Tcl_Interp * interp)
     logtocmd = createLogPlugIn();
     WebAssertData(interp, logtocmd, "log_Init/logtocmd plugin", TCL_ERROR)
 
-	logtocmd->constructor = createLogToCmd;
+    logtocmd->constructor = createLogToCmd;
     logtocmd->destructor = destroyLogToCmd;
     logtocmd->handler = logToCmd;
 
-    ires = registerLogPlugIn(interp, "command", logtocmd);
+    if (registerLogPlugIn(interp, "command", logtocmd) != TCL_OK)
+	return TCL_ERROR;
 
     /* --------------------------------------------------------------------------
      * register log handler "syslog"
      * ----------------------------------------------------------------------- */
 #ifndef WIN32
     logtosyslog = createLogPlugIn();
-    WebAssertData(interp, logtocmd, "log_Init/logtosyslog plugin", TCL_ERROR)
+    WebAssertData(interp, logtosyslog, "log_Init/logtosyslog plugin", TCL_ERROR)
 
     logtosyslog->constructor = createLogToSyslog;
     logtosyslog->destructor = destroyLogToSyslog;
     logtosyslog->handler = logToSyslog;
 
-    ires = registerLogPlugIn(interp, "syslog", logtosyslog);
+    if (registerLogPlugIn(interp, "syslog", logtosyslog) != TCL_OK)
+	return TCL_ERROR;
 #endif
     /* --------------------------------------------------------------------------
      * done

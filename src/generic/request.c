@@ -24,6 +24,7 @@
 #include <errno.h>
 #else
 #include <sys/errno.h>
+#include <unistd.h>
 #endif
 
 void destroyRequestDataHook(ClientData clientData)
@@ -390,7 +391,24 @@ Tcl_Obj *tempFileName(Tcl_Interp * interp, RequestData * requestData,
 #ifdef WIN32
     tmpn = _tempnam(pathstring, prefixstring);
 #else
-    tmpn = tempnam(pathstring, prefixstring);
+    {
+        char tmpl[1024];
+        int fd;
+        const char *dir = (pathstring != NULL) ? pathstring : P_tmpdir;
+        const char *pfx = (prefixstring != NULL) ? prefixstring : "websh";
+        snprintf(tmpl, sizeof(tmpl), "%s/%sXXXXXX", dir, pfx);
+        fd = mkstemp(tmpl);
+        if (fd < 0 && pathstring != NULL) {
+            /* specified dir failed (e.g. does not exist); fall back to P_tmpdir */
+            snprintf(tmpl, sizeof(tmpl), "%s/%sXXXXXX", P_tmpdir, pfx);
+            fd = mkstemp(tmpl);
+        }
+        if (fd >= 0) {
+            close(fd);
+            unlink(tmpl);   /* remove immediately; caller creates the file itself */
+            tmpn = strdup(tmpl);
+        }
+    }
 #endif
 
     if (tmpn == NULL) {

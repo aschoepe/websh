@@ -195,10 +195,22 @@ proc web::uuidV4 {} {
 }
 
 proc web::getContent {} {
-  if {[web::request CONTENT_ENCODING] in [encoding names]} {
-    return [encoding convertfrom [web::request CONTENT_ENCODING] [web::request CONTENT_DATA]]
+  # Determine encoding: prefer charset= from Content-Type, then CONTENT_ENCODING,
+  # then fall back to utf-8 (correct default for JSON/XML and modern clients).
+  set enc ""
+  set ct [web::request CONTENT_TYPE ""]
+  if {$ct ne ""} {
+    if {[regexp -nocase {charset=([^\s;\"]+)} $ct -> cs]} {
+      set enc [string tolower $cs]
+    }
   }
-  return [web::request CONTENT_DATA]
+  if {$enc eq ""} {
+    set enc [web::request CONTENT_ENCODING ""]
+  }
+  if {$enc eq "" || $enc ni [encoding names]} {
+    set enc utf-8
+  }
+  return [encoding convertfrom $enc [web::request CONTENT_DATA]]
 }
 
 proc web::mimeType { token } {
