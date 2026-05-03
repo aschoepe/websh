@@ -1,18 +1,15 @@
-                         ------------------
-                         Websh, Version 3.7.4
-                         ------------------
+                         --------------------
+                         Websh, Version 3.7.5
+                         --------------------
 
             Copyright 1996-2001, Netcetera AG, Switzerland
-	    Copyright 2001-2005, Apache Software Foundation.
+            Copyright 2001-2005, Apache Software Foundation.
+            Copyright 2018-2026, Alexander Schöpe, Bochum, DE
 
                          All rights reserved.
 
       This software is distributed under the terms of the Apache
               Software License, available as "LICENSE".
-
-                      Websh is available from
-
-                    http://tcl.apache.org/websh/
 
 Contents
 --------
@@ -20,9 +17,8 @@ Contents
     1. Introduction
     2. Documentation
     3. Compiling and installing Websh (Unix)
-    4. mod_websh: Websh as Apache Module (Unix)
-    5. Compiling and installing Websh and mod_websh (Windows XP)
-    6. Support
+    4. mod_websh: Websh as Apache Module
+    5. Support
 
 
 1. Introduction
@@ -30,131 +26,111 @@ Contents
 
 Websh is a rapid development environment for building powerful and
 reliable web applications. It is a standard Tcl extension and is
-released as Open Source Software. Websh is versatile and handles
-everything from HTML generation to data-base driven one-to-one page
-customization. At Netcetera, we have been using it for years for
-virtually all our customer projects, which typically are E-commerce
-shops or electronic banking applications.
+released as Open Source Software. Websh handles everything from HTML
+generation to database-driven web applications, JSON REST APIs, and
+real-time Server-Sent Events (SSE).
 
-Websh was originally developed by Netcetera AG, Switzerland and was
-contributed to the Apache Software Foundation in 2001.
+Originally developed by Netcetera AG, Switzerland, and contributed
+to the Apache Software Foundation in 2001.
 
 Find more information about
 
 - Apache:                      http://www.apache.org/
-- Websh:                       http://tcl.apache.org/websh/
 - Netcetera AG, Switzerland:   http://netcetera.ch/
 - Tcl:                         http://tcl.tk/
+
+Key features:
+- CGI and Apache module (mod_websh) deployment
+- Request routing (web::dispatch)
+- URL generation (web::cmdurl)
+- Form data and multipart/form-data parsing
+- Session management (file-based)
+- JWT encode/decode
+- Server-Sent Events (web::sseStart, web::sseSend)
+- Logging (web::log, web::loglevel, web::logdest)
+- URL encoding/decoding, HTML conversion
+- Cryptographic utilities and random bytes
 
 
 2. Documentation
 ----------------
 
-Documentation is available at
-
-        http://tcl.apache.org/websh/
+- doc/quickref.xml     Quick reference for all web::* commands
+- doc/mod_websh/       Apache module configuration
+- CLAUDE.md            Architecture and development notes
+- claude/skills/websh/ Complete web::* command reference (for AI tools)
 
 
 3. Compiling and installing Websh (Unix)
 ----------------------------------------
 
-Please note that we use some GNU make extensions, so make sure that 
-you try to compile Websh using a GNU version of make (or gmake) when
-compiling under UNIX.
-
-Websh is a pure Tcl extension, Tk is not required. You need
-Tcl 8.6 or newer (threaded build) to compile and install Websh 3.7.4.
-
-typically:
+Requirements:
+- Tcl 8.6 or newer (threaded build)
+- GNU make
 
   cd src/unix
-  autoconf
+  autoconf            # only needed after editing configure.ac
   ./configure --with-tcl=/path/to/tcl/lib
   make
-  make test
+  make test           # expected: 465 passed, 5 skipped, 0 failed
   make install
 
-Make will create three targets: websh3.7.4, which is the standalone
-Websh application (dynamically linked to Tcl and libwebsh3.7.4.so)
-and libwebsh3.7.4.so, which is a TEA (Tcl Extension Architecture)
-compliant shared object that can be dynamically loaded from within Tcl
-using [load libwebsh3.7.4.so]. Both provide the Tcl package websh.
-The third target is mod_websh3.7.4.so (the Apache module), which is
-built automatically when Apache headers are found.
+Build targets:
+- websh3.7.5          standalone binary (dynamically linked to libwebsh)
+- libwebsh3.7.5.so    TEA-compliant shared library (Tcl package "websh")
+- mod_websh3.7.5.so   Apache module (built automatically when headers found)
 
-Apache headers and APR/APU include paths are detected automatically.
-If they are not in a standard location, specify them explicitly:
+Install layout (prefix = /usr/local/tcl86):
+- bin/websh3.7.5, bin/websh -> websh3.7.5
+- lib/websh3.7.5/libwebsh3.7.5.so, lib/websh3.7.5/pkgIndex.tcl
+- lib/libwebsh3.7.5.so -> websh3.7.5/libwebsh3.7.5.so
+- lib/libwebsh.so -> libwebsh3.7.5.so
+- lib/httpd/modules/mod_websh3.7.5.so  (Apache only)
+- lib/httpd/modules/mod_websh.so -> mod_websh3.7.5.so  (Apache only)
 
-  ./configure --with-tcl=/usr/local/tcl86/lib \
-      --with-httpdinclude=/path/to/apache/include \
-      --with-aprinclude=/path/to/apr/include
+On Linux, make install automatically runs ldconfig and restarts Apache
+(systemctl restart apache2 / httpd) if the service exists.
 
 To build without the Apache module:
 
   ./configure --with-tcl=/usr/local/tcl86/lib --disable-apache
 
-By default, Websh is installed to /usr/local
-To change this location, provide the --prefix option to configure:
+To force the Apache module (fail if headers are missing):
 
-  ./configure --prefix=/opt
+  ./configure --with-tcl=/usr/local/tcl86/lib --enable-apache
+
+APR and APU include paths are detected automatically via apr-1-config
+and apu-1-config. Override if needed:
+
+  ./configure --with-tcl=/usr/local/tcl86/lib \
+      --with-aprinclude=/path/to/apr/include
+
+On macOS with Homebrew, Apache and APR paths are found automatically
+for both Intel (/usr/local) and Apple Silicon (/opt/homebrew) — no
+extra flags required.
+
+To change the install prefix:
+
+  ./configure --with-tcl=/usr/local/tcl86/lib --prefix=/opt
 
 
 4. mod_websh: Websh as Apache Module
 ------------------------------------
 
-Websh applications can both run in CGI mode and in mod_websh, the
-module for Apache 2.4. mod_websh is built automatically when Apache
-headers are found during configure. It requires a threaded Tcl build
-(the default for most Tcl 8.6 installations).
+Websh applications can run in CGI mode or as mod_websh, the Apache 2.4
+module. mod_websh is built automatically when Apache headers are found.
 
-Note: mod_websh is not compatible with mod_http2. Disable mod_http2
-in the Apache configuration when using mod_websh.
+Note: mod_websh is not compatible with mod_http2. Disable mod_http2 in
+the Apache configuration when using mod_websh.
 
-mod_websh3.7.4.so is compiled by default when 'make all' is invoked
-and Apache headers are available.
-
-In order to use mod_websh in your Apache web server, please refer
-to the file doc/mod_websh/README
-
-A sample setup to serve SSI-type HTML with Websh-snipplets and CGI-type
-scripts is found in doc/mod_websh and will be installed with the 
-'make install' command.
+mod_websh manages a pool of Tcl interpreters to handle concurrent
+requests efficiently. Refer to doc/mod_websh/README for configuration
+details.
 
 
-5. Compiling and installing Websh and mod_websh (Windows XP)
-------------------------------------------------------------
-
-Websh currently provides a Makefile for Microsoft Visual Studio 6.0 nmake.
-
-Please refer to the file src/win/README for details.
-
-
-6. Support
+5. Support
 ----------
 
-For support please try the following mailing list on tcl.apache.org:
+Websh is open source software distributed under the Apache Software
+License. See LICENSE for details.
 
-  websh-user@tcl.apache.org
-
-You may subscribe by sending mail to websh-user-subscribe@tcl.apache.org.
-
-If you would like to contribute to websh, please subscribe to:
-
-  websh-dev@tcl.apache.org
-
-by sending mail to websh-dev-subscribe@tcl.apache.org.
-
-In addition, Netcetera is committed to provide additional support for Websh.
-
-You can reach us at
-
-  support@websh.com
-
-and
-
-  info@websh.com
-
-
-== Thank you for your interest in Websh ==
-
-@(#) $Id: README 777449 2009-05-22 10:13:35Z ronnie $
