@@ -17,6 +17,11 @@ TOP_DIR = ..
 lib_BINARIES=$(web_LIB_FILE)
 BINARIES=$(lib_BINARIES)
 
+# Set by configure: "mod_websh.so" when --enable-apache, empty otherwise
+APACHE_TARGET = mod_websh.so
+# Set by configure: "install-libraries" when --enable-apache, empty otherwise
+INSTALL_APACHE = install-libraries
+
 SCRIPT_SOURCES = ../generic/context.tcl ../generic/script.ws3 ../generic/cookie.ws3 ../generic/sessctx.ws3 ../generic/filerandom.tcl ../generic/genpasswd.tcl ../generic/webutils.tcl ../generic/jwt.tcl
 
 web_OBJECTS = args.o \
@@ -81,7 +86,7 @@ SHELL = /bin/bash
 
 srcdir = .
 prefix = /usr/local/tcl86
-exec_prefix = ${prefix}
+exec_prefix = /usr/local/tcl86
 
 bindir = ${exec_prefix}/bin
 libdir = ${exec_prefix}/lib
@@ -90,23 +95,23 @@ sharedir = $(prefix)/share/websh3.6
 docdir = $(sharedir)/htdocs
 cfgdir = $(sharedir)/conf
 
-PACKAGE = web
+PACKAGE = websh
 VERSION = 3.7.4
-CC = cc
+CC = gcc
 CFLAGS_DEBUG = -g
-CFLAGS_DEFAULT = -O2
+CFLAGS_DEFAULT = -O2 -fomit-frame-pointer -DNDEBUG
 CFLAGS_OPTIMIZE = -O2
-CFLAGS_WARNING = -Wall -Wpointer-arith
+CFLAGS_WARNING = -Wall
 CLEANFILES = *pure* *.cov* ../tests/webtest.log ../tests/*.dat
 EXEEXT = 
 LDFLAGS_DEFAULT = 
 MAKE_LIB = ${SHLIB_LD} -o $@ $($@_OBJECTS) ${SHLIB_LDFLAGS} ${SHLIB_LD_LIBS}
 MAKE_SHARED_LIB = ${SHLIB_LD} -o $@ $($@_OBJECTS) ${SHLIB_LDFLAGS} ${SHLIB_LD_LIBS}
-MAKE_STATIC_LIB = ${STLIB_LD} $@ $($@_OBJECTS)
+MAKE_STATIC_LIB = ${STLIB_LD} $@ $(PKG_OBJECTS)
 OBJEXT = o
 RANLIB = :
 SHLIB_CFLAGS = -fPIC
-SHLIB_LD = ${CC} ${CFLAGS} ${LDFLAGS} -shared
+SHLIB_LD = ${CC} ${CFLAGS} ${LDFLAGS_DEFAULT} -shared
 Platform=$(shell uname -s)
 ifeq ($(Platform),Darwin)
 SHLIB_LD_CURRENT = $(CC) -bundle -bundle_loader $(HTTPD_BIN) $(LDFLAGS)
@@ -116,7 +121,7 @@ SHLIB_LD_CURRENT = $(SHLIB_LD) $(TCL_LD_FLAGS)
 LDLIBPATHVAR = LD_LIBRARY_PATH
 endif
 SHLIB_LDFLAGS = 
-SHLIB_LD_LIBS = -L/usr/local/tcl86/lib -ltclstub8.6
+SHLIB_LD_LIBS = ${LIBS} -L/usr/local/tcl86/lib -ltclstub8.6
 STLIB_LD = ${AR} cr
 APRU_LIBS = 
 TCL_BIN_DIR = /usr/local/tcl86/lib
@@ -130,7 +135,7 @@ TCL_DBGX =
 TCL_STUB_LIB_FILE = libtclstub8.6.a
 TCL_STUB_LIB_SPEC = -L/usr/local/tcl86/lib -ltclstub8.6
 TCL_LIB_SPEC = -L/usr/local/tcl86/lib -ltcl8.6
-TCLSH_PROG = /usr/local/tcl86/lib/../bin/tclsh8.6
+TCLSH_PROG = /usr/local/tcl86/bin/tclsh8.6
 TCL_PACKAGE_PATH = /usr/local/tcl86/lib
 
 # uncomment the following line if you want to enable the
@@ -141,7 +146,7 @@ SHARED_LIB_SUFFIX = 3.7.4.so
 MODULE_LIB_SUFFIX = $(VERSION).so
 UNSHARED_LIB_SUFFIX = 3.7.4.a
 
-HTTPD_INCLUDES = -I"/usr/include/apache2" -I"/usr/include/apr-1.0"
+HTTPD_INCLUDES = -I/usr/include/apache2  -I/usr/include/apr-1.0   -I/usr/include/apr-1.0 -I/usr/include
 # needed for Darwin (OS X) only
 HTTPD_BIN = 
 
@@ -149,7 +154,7 @@ AUTOCONF = autoconf
 
 LDFLAGS = $(LDFLAGS_DEFAULT)
 
-INCLUDES = -I"/usr/local/tcl86/lib//../include" $(HTTPD_INCLUDES)
+INCLUDES = -I"/usr/local/tcl86/include" $(HTTPD_INCLUDES)
 
 # remove PACKAGE stuff: will cause warnings for Apache >2 and Tcl >=8.5
 FIXED_TCL_DEFS = $(filter-out -DPACKAGE_NAME=% -DPACKAGE_TARNAME=% -DPACKAGE_VERSION=% -DPACKAGE_STRING=% -DPACKAGE_BUGREPORT=% 8.% 9.%, $(TCL_DEFS))
@@ -165,7 +170,7 @@ ACLOCAL_M4 = $(srcdir)/aclocal.m4
 CPPFLAGS = 
 LIBS = 
 AR = ar
-CFLAGS = ${CFLAGS_DEFAULT} ${CFLAGS_DEBUG} ${CFLAGS_WARNING} ${SHLIB_CFLAGS}
+CFLAGS =  -pipe ${CFLAGS_DEFAULT} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
@@ -176,13 +181,13 @@ LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
 
 bin_BINARIES:=websh$(VERSION)
 
-all: binaries libraries
+all: binaries $(APACHE_TARGET)
 
 binaries: $(BINARIES) $(OBJECTS) websh
 
-libraries: mod_websh.so
+libraries: $(APACHE_TARGET)
 
-install: all install-binaries install-libraries install-doc
+install: all install-binaries $(INSTALL_APACHE) install-doc
 
 # =============================================================================
 # Dist target - to make the tarball.
@@ -199,7 +204,7 @@ distdoc: ../../doc/quickref.xml ../../doc/quickref.xsl
 # =============================================================================
 
 test: websh$(VERSION) $(web_LIB_FILE) $(web_OBJECTS)
-	@$(LDLIBPATHVAR)="$(strip $(TCL_PACKAGE_PATH)):$(TOP_DIR)/unix:$(LD_LIBRARY_PATH)"; \
+	@$(LDLIBPATHVAR)="$(TOP_DIR)/unix:$(strip $(TCL_PACKAGE_PATH)):$(LD_LIBRARY_PATH)"; \
 	export $(LDLIBPATHVAR); \
 	TCL_LIBRARY="$(TCL_SRC_DIR)/library"; export TCL_LIBRARY; \
 	WEB_LIBRARY=$(TOP_DIR)/unix/$(web_LIB_FILE); export WEB_LIBRARY; \
@@ -210,7 +215,7 @@ test: websh$(VERSION) $(web_LIB_FILE) $(web_OBJECTS)
 	$(TOP_DIR)/unix/websh$(VERSION) webtest.ws3
 
 test.pure: websh$(VERSION).pure $(web_LIB_FILE) $(web_OBJECTS)
-	@$(LDLIBPATHVAR)="$(strip $(TCL_PACKAGE_PATH)):$(TOP_DIR)/unix:$(LD_LIBRARY_PATH)"; \
+	@$(LDLIBPATHVAR)="$(TOP_DIR)/unix:$(strip $(TCL_PACKAGE_PATH)):$(LD_LIBRARY_PATH)"; \
 	export $(LDLIBPATHVAR); \
 	TCL_LIBRARY="$(TCL_SRC_DIR)/library"; export TCL_LIBRARY; \
 	WEB_LIBRARY=$(TOP_DIR)/unix/$(web_LIB_FILE); export WEB_LIBRARY; \
@@ -221,7 +226,7 @@ test.pure: websh$(VERSION).pure $(web_LIB_FILE) $(web_OBJECTS)
 	(echo source webtest.ws3) | ../unix/websh$(VERSION).pure
 
 test.cov: websh$(VERSION).cov $(web_LIB_FILE) $(web_OBJECTS)
-	@$(LDLIBPATHVAR)="$(strip $(TCL_PACKAGE_PATH)):$(TOP_DIR)/unix:$(LD_LIBRARY_PATH)"; \
+	@$(LDLIBPATHVAR)="$(TOP_DIR)/unix:$(strip $(TCL_PACKAGE_PATH)):$(LD_LIBRARY_PATH)"; \
 	export $(LDLIBPATHVAR); \
 	TCL_LIBRARY="$(TCL_SRC_DIR)/library"; export TCL_LIBRARY; \
 	WEB_LIBRARY=$(TOP_DIR)/unix/$(web_LIB_FILE); export WEB_LIBRARY; \
@@ -232,7 +237,7 @@ test.cov: websh$(VERSION).cov $(web_LIB_FILE) $(web_OBJECTS)
 	(echo source webtest.ws3) | ../unix/websh$(VERSION).cov
 
 apachetest: mod_websh.so websh
-	@$(LDLIBPATHVAR)="$(strip $(TCL_PACKAGE_PATH)):$(TOP_DIR)/unix:$(LD_LIBRARY_PATH)"; \
+	@$(LDLIBPATHVAR)="$(TOP_DIR)/unix:$(strip $(TCL_PACKAGE_PATH)):$(LD_LIBRARY_PATH)"; \
 	export $(LDLIBPATHVAR); \
 	TCL_LIBRARY="$(TCL_SRC_DIR)/library"; export TCL_LIBRARY; \
 	WEB_LIBRARY=$(TOP_DIR)/unix/$(web_LIB_FILE); export WEB_LIBRARY; \
@@ -273,7 +278,7 @@ mod_websh.so: mod_websh$(MODULE_LIB_SUFFIX)
 
 
 websh$(VERSION): tclAppInit.$(OBJEXT) $(web_LIB_FILE)
-	$(CC)  tclAppInit.$(OBJEXT) $(web_LIB_FILE) \
+	$(CC)  -Wl,--export-dynamic  tclAppInit.$(OBJEXT) $(web_LIB_FILE) \
 	$(TCL_LIB_SPEC) $(TCL_STUB_LIB_SPEC) $(TCL_LIBS) $(TCL_LD_FLAGS) \
 	-o websh$(VERSION)
 
@@ -289,7 +294,7 @@ mod_websh$(UNSHARED_LIB_SUFFIX): $(web_OBJECTS_ap) $(web_OBJECTS)
 pure: websh$(VERSION).pure
 
 websh$(VERSION).pure: tclAppInit.$(OBJEXT) $(web_LIB_FILE)
-	purify $(CC)  tclAppInit.$(OBJEXT) $(web_LIB_FILE) \
+	purify $(CC)  -Wl,--export-dynamic  tclAppInit.$(OBJEXT) $(web_LIB_FILE) \
 	$(TCL_LIB_SPEC) $(TCL_STUB_LIB_SPEC) $(TCL_LIBS) $(TCL_LD_FLAGS) \
 	-o websh$(VERSION).pure
 	-rm -f *_pure_*.o
@@ -297,7 +302,7 @@ websh$(VERSION).pure: tclAppInit.$(OBJEXT) $(web_LIB_FILE)
 cov: websh$(VERSION).cov
 
 websh$(VERSION).cov: tclAppInit.$(OBJEXT) $(web_LIB_FILE)
-	purecov $(CC)  tclAppInit.$(OBJEXT) $(web_LIB_FILE) \
+	purecov $(CC)  -Wl,--export-dynamic  tclAppInit.$(OBJEXT) $(web_LIB_FILE) \
 	$(TCL_LIB_SPEC) $(TCL_STUB_LIB_SPEC) $(TCL_LIBS) $(TCL_LD_FLAGS) \
 	-o websh$(VERSION).cov
 	-rm -f *_pure_*.o
@@ -391,7 +396,7 @@ Makefile: $(srcdir)/Makefile.in  $(srcdir)/config.status
 config.status: $(srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
 
-$(srcdir)/configure: $(srcdir)/configure.in $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
+$(srcdir)/configure: $(srcdir)/configure.ac $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
 	cd $(srcdir) && $(AUTOCONF)
 
 .PHONY: all binaries libraries clean distclean depend install test

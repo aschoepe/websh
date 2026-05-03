@@ -17,6 +17,11 @@ TOP_DIR = ..
 lib_BINARIES=$(web_LIB_FILE)
 BINARIES=$(lib_BINARIES)
 
+# Set by configure: "mod_websh.so" when --enable-apache, empty otherwise
+APACHE_TARGET = @APACHE_TARGET@
+# Set by configure: "install-libraries" when --enable-apache, empty otherwise
+INSTALL_APACHE = @INSTALL_APACHE@
+
 SCRIPT_SOURCES = ../generic/context.tcl ../generic/script.ws3 ../generic/cookie.ws3 ../generic/sessctx.ws3 ../generic/filerandom.tcl ../generic/genpasswd.tcl ../generic/webutils.tcl ../generic/jwt.tcl
 
 web_OBJECTS = args.o \
@@ -141,7 +146,7 @@ SHARED_LIB_SUFFIX = @SHARED_LIB_SUFFIX@
 MODULE_LIB_SUFFIX = $(VERSION).so
 UNSHARED_LIB_SUFFIX = @UNSHARED_LIB_SUFFIX@
 
-HTTPD_INCLUDES = @HTTPD_INCLUDES@@APR_INCLUDES@@APU_INCLUDES@
+HTTPD_INCLUDES = @HTTPD_INCLUDES@ @APR_INCLUDES@ @APU_INCLUDES@
 # needed for Darwin (OS X) only
 HTTPD_BIN = @HTTPD_BIN@
 
@@ -176,13 +181,13 @@ LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
 
 bin_BINARIES:=websh$(VERSION)
 
-all: binaries libraries
+all: binaries $(APACHE_TARGET)
 
 binaries: $(BINARIES) $(OBJECTS) websh
 
-libraries: mod_websh.so
+libraries: $(APACHE_TARGET)
 
-install: all install-binaries install-libraries install-doc
+install: all install-binaries $(INSTALL_APACHE) install-doc
 
 # =============================================================================
 # Dist target - to make the tarball.
@@ -199,7 +204,7 @@ distdoc: ../../doc/quickref.xml ../../doc/quickref.xsl
 # =============================================================================
 
 test: websh$(VERSION) $(web_LIB_FILE) $(web_OBJECTS)
-	@$(LDLIBPATHVAR)="$(strip $(TCL_PACKAGE_PATH)):$(TOP_DIR)/unix:$(LD_LIBRARY_PATH)"; \
+	@$(LDLIBPATHVAR)="$(TOP_DIR)/unix:$(strip $(TCL_PACKAGE_PATH)):$(LD_LIBRARY_PATH)"; \
 	export $(LDLIBPATHVAR); \
 	TCL_LIBRARY="$(TCL_SRC_DIR)/library"; export TCL_LIBRARY; \
 	WEB_LIBRARY=$(TOP_DIR)/unix/$(web_LIB_FILE); export WEB_LIBRARY; \
@@ -210,7 +215,7 @@ test: websh$(VERSION) $(web_LIB_FILE) $(web_OBJECTS)
 	$(TOP_DIR)/unix/websh$(VERSION) webtest.ws3
 
 test.pure: websh$(VERSION).pure $(web_LIB_FILE) $(web_OBJECTS)
-	@$(LDLIBPATHVAR)="$(strip $(TCL_PACKAGE_PATH)):$(TOP_DIR)/unix:$(LD_LIBRARY_PATH)"; \
+	@$(LDLIBPATHVAR)="$(TOP_DIR)/unix:$(strip $(TCL_PACKAGE_PATH)):$(LD_LIBRARY_PATH)"; \
 	export $(LDLIBPATHVAR); \
 	TCL_LIBRARY="$(TCL_SRC_DIR)/library"; export TCL_LIBRARY; \
 	WEB_LIBRARY=$(TOP_DIR)/unix/$(web_LIB_FILE); export WEB_LIBRARY; \
@@ -221,7 +226,7 @@ test.pure: websh$(VERSION).pure $(web_LIB_FILE) $(web_OBJECTS)
 	(echo source webtest.ws3) | ../unix/websh$(VERSION).pure
 
 test.cov: websh$(VERSION).cov $(web_LIB_FILE) $(web_OBJECTS)
-	@$(LDLIBPATHVAR)="$(strip $(TCL_PACKAGE_PATH)):$(TOP_DIR)/unix:$(LD_LIBRARY_PATH)"; \
+	@$(LDLIBPATHVAR)="$(TOP_DIR)/unix:$(strip $(TCL_PACKAGE_PATH)):$(LD_LIBRARY_PATH)"; \
 	export $(LDLIBPATHVAR); \
 	TCL_LIBRARY="$(TCL_SRC_DIR)/library"; export TCL_LIBRARY; \
 	WEB_LIBRARY=$(TOP_DIR)/unix/$(web_LIB_FILE); export WEB_LIBRARY; \
@@ -232,7 +237,7 @@ test.cov: websh$(VERSION).cov $(web_LIB_FILE) $(web_OBJECTS)
 	(echo source webtest.ws3) | ../unix/websh$(VERSION).cov
 
 apachetest: mod_websh.so websh
-	@$(LDLIBPATHVAR)="$(strip $(TCL_PACKAGE_PATH)):$(TOP_DIR)/unix:$(LD_LIBRARY_PATH)"; \
+	@$(LDLIBPATHVAR)="$(TOP_DIR)/unix:$(strip $(TCL_PACKAGE_PATH)):$(LD_LIBRARY_PATH)"; \
 	export $(LDLIBPATHVAR); \
 	TCL_LIBRARY="$(TCL_SRC_DIR)/library"; export TCL_LIBRARY; \
 	WEB_LIBRARY=$(TOP_DIR)/unix/$(web_LIB_FILE); export WEB_LIBRARY; \
@@ -391,7 +396,7 @@ Makefile: $(srcdir)/Makefile.in  $(srcdir)/config.status
 config.status: $(srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
 
-$(srcdir)/configure: $(srcdir)/configure.in $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
+$(srcdir)/configure: $(srcdir)/configure.ac $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
 	cd $(srcdir) && $(AUTOCONF)
 
 .PHONY: all binaries libraries clean distclean depend install test
