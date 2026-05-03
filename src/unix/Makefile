@@ -73,7 +73,7 @@ web_OBJECTS_ap = apchannel.o \
 
 OBJECTS = $(web_OBJECTS)
 
-web_LIB_FILE = libwebsh3.7.4.so
+web_LIB_FILE = libwebsh3.7.5.so
 $(web_LIB_FILE)_OBJECTS = $(web_OBJECTS)
 
 # =============================================================================
@@ -90,13 +90,14 @@ exec_prefix = /usr/local/tcl86
 
 bindir = ${exec_prefix}/bin
 libdir = ${exec_prefix}/lib
+pkgdir = $(libdir)/websh$(VERSION)
 moddir = $(libdir)/httpd/modules
-sharedir = $(prefix)/share/websh3.6
+sharedir = $(prefix)/share/websh$(VERSION)
 docdir = $(sharedir)/htdocs
 cfgdir = $(sharedir)/conf
 
 PACKAGE = websh
-VERSION = 3.7.4
+VERSION = 3.7.5
 CC = gcc
 CFLAGS_DEBUG = -g
 CFLAGS_DEFAULT = -O2 -fomit-frame-pointer -DNDEBUG
@@ -142,9 +143,9 @@ TCL_PACKAGE_PATH = /usr/local/tcl86/lib
 # Tcl memory and checkmem commands in mod_websh
 #MEM_DEBUG_FLAGS = -DTCL_MEM_DEBUG
 
-SHARED_LIB_SUFFIX = 3.7.4.so
+SHARED_LIB_SUFFIX = 3.7.5.so
 MODULE_LIB_SUFFIX = $(VERSION).so
-UNSHARED_LIB_SUFFIX = 3.7.4.a
+UNSHARED_LIB_SUFFIX = 3.7.5.a
 
 HTTPD_INCLUDES = -I/usr/include/apache2  -I/usr/include/apr-1.0   -I/usr/include/apr-1.0 -I/usr/include
 # needed for Darwin (OS X) only
@@ -163,7 +164,7 @@ EXTRA_CFLAGS = $(FIXED_TCL_DEFS) $(PROTO_FLAGS) $(SECURITY_FLAGS) \
 	$(MEM_DEBUG_FLAGS) $(KEYSYM_FLAGS) $(NO_DEPRECATED_FLAGS) \
 	$(TCL_EXTRA_CFLAGS)
 
-DEFS = -DVERSION=\"3.7.4\" -DSYSV=1 -DUSE_TCL_STUBS=1 $(EXTRA_CFLAGS)
+DEFS = -DVERSION=\"3.7.5\" -DSYSV=1 -DUSE_TCL_STUBS=1 $(EXTRA_CFLAGS)
 
 ACLOCAL_M4 = $(srcdir)/aclocal.m4
 
@@ -316,6 +317,7 @@ websh$(VERSION).cov: tclAppInit.$(OBJEXT) $(web_LIB_FILE)
 clean:
 	-rm -f $(BINARIES)
 	-rm -f $(bin_BINARIES)
+	-rm -f websh[0-9]* libwebsh[0-9]*.so mod_websh[0-9]*.so
 	-rm -f *.o core *.core
 	-rm -f *.$(OBJEXT)
 	-rm -f *pure* .*pure*
@@ -338,28 +340,27 @@ distclean: clean
 # Install
 # =============================================================================
 
-# websh
+# websh binary + Tcl package (pkgdir = libdir/webshVERSION)
 install-binaries: install-dirs binaries
 	cp -f websh$(VERSION) $(bindir)
 	rm -f $(bindir)/websh
-	ln -s websh$(VERSION) $(bindir)/websh
-	if [ -f libwebsh$(SHARED_LIB_SUFFIX) ]; then \
-	cp -f libwebsh$(SHARED_LIB_SUFFIX) $(libdir); \
-	rm -f $(libdir)/libwebsh.so; \
-	ln -s libwebsh$(SHARED_LIB_SUFFIX) $(libdir)/libwebsh.so; \
-	fi
-	if [ -f libwebsh$(UNSHARED_LIB_SUFFIX) ]; then \
-	cp -f libwebsh$(UNSHARED_LIB_SUFFIX) $(libdir); \
-	rm -f $(libdir)/libwebsh.a; \
-	ln -s libwebsh$(UNSHARED_LIB_SUFFIX) $(libdir)/libwebsh.a; \
-	fi
-	cp -f $(TOP_DIR)/../src/unix/pkgIndex.tcl $(libdir)
+	ln -sf websh$(VERSION) $(bindir)/websh
+	mkdir -p $(pkgdir)
+	cp -f libwebsh$(SHARED_LIB_SUFFIX) $(pkgdir)
+	cp -f pkgIndex.tcl $(pkgdir)
+	rm -f $(libdir)/libwebsh$(SHARED_LIB_SUFFIX)
+	ln -sf websh$(VERSION)/libwebsh$(SHARED_LIB_SUFFIX) $(libdir)/libwebsh$(SHARED_LIB_SUFFIX)
+	rm -f $(libdir)/libwebsh.so
+	ln -sf libwebsh$(SHARED_LIB_SUFFIX) $(libdir)/libwebsh.so
 
-# mod_websh
+# mod_websh (only when --enable-apache / Apache headers found)
 install-libraries: install-dirs libraries
+	mkdir -p $(moddir)
 	cp -f mod_websh$(VERSION).so $(moddir)
 	rm -f $(moddir)/mod_websh.so
-	ln -s mod_websh$(VERSION).so $(moddir)/mod_websh.so
+	ln -sf mod_websh$(VERSION).so $(moddir)/mod_websh.so
+	rm -f $(moddir)/libwebsh$(SHARED_LIB_SUFFIX)
+	ln -sf $(pkgdir)/libwebsh$(SHARED_LIB_SUFFIX) $(moddir)/libwebsh$(SHARED_LIB_SUFFIX)
 
 # documentation / sample mod_websh setup
 install-doc: install-dirs
@@ -370,8 +371,8 @@ install-doc: install-dirs
 # create destination directories
 install-dirs:
 	mkdir -p $(bindir)
+	mkdir -p $(pkgdir)
 	mkdir -p $(libdir)
-	mkdir -p $(moddir)
 	mkdir -p $(sharedir)
 	mkdir -p $(docdir)
 	mkdir -p $(cfgdir)

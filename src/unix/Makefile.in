@@ -90,8 +90,9 @@ exec_prefix = @exec_prefix@
 
 bindir = @bindir@
 libdir = @libdir@
+pkgdir = $(libdir)/websh$(VERSION)
 moddir = $(libdir)/httpd/modules
-sharedir = $(prefix)/share/websh3.6
+sharedir = $(prefix)/share/websh$(VERSION)
 docdir = $(sharedir)/htdocs
 cfgdir = $(sharedir)/conf
 
@@ -316,6 +317,7 @@ websh$(VERSION).cov: tclAppInit.$(OBJEXT) $(web_LIB_FILE)
 clean:
 	-rm -f $(BINARIES)
 	-rm -f $(bin_BINARIES)
+	-rm -f websh[0-9]* libwebsh[0-9]*.so mod_websh[0-9]*.so
 	-rm -f *.o core *.core
 	-rm -f *.$(OBJEXT)
 	-rm -f *pure* .*pure*
@@ -338,28 +340,27 @@ distclean: clean
 # Install
 # =============================================================================
 
-# websh
+# websh binary + Tcl package (pkgdir = libdir/webshVERSION)
 install-binaries: install-dirs binaries
 	cp -f websh$(VERSION) $(bindir)
 	rm -f $(bindir)/websh
-	ln -s websh$(VERSION) $(bindir)/websh
-	if [ -f libwebsh$(SHARED_LIB_SUFFIX) ]; then \
-	cp -f libwebsh$(SHARED_LIB_SUFFIX) $(libdir); \
-	rm -f $(libdir)/libwebsh.so; \
-	ln -s libwebsh$(SHARED_LIB_SUFFIX) $(libdir)/libwebsh.so; \
-	fi
-	if [ -f libwebsh$(UNSHARED_LIB_SUFFIX) ]; then \
-	cp -f libwebsh$(UNSHARED_LIB_SUFFIX) $(libdir); \
-	rm -f $(libdir)/libwebsh.a; \
-	ln -s libwebsh$(UNSHARED_LIB_SUFFIX) $(libdir)/libwebsh.a; \
-	fi
-	cp -f $(TOP_DIR)/../src/unix/pkgIndex.tcl $(libdir)
+	ln -sf websh$(VERSION) $(bindir)/websh
+	mkdir -p $(pkgdir)
+	cp -f libwebsh$(SHARED_LIB_SUFFIX) $(pkgdir)
+	cp -f pkgIndex.tcl $(pkgdir)
+	rm -f $(libdir)/libwebsh$(SHARED_LIB_SUFFIX)
+	ln -sf websh$(VERSION)/libwebsh$(SHARED_LIB_SUFFIX) $(libdir)/libwebsh$(SHARED_LIB_SUFFIX)
+	rm -f $(libdir)/libwebsh.so
+	ln -sf libwebsh$(SHARED_LIB_SUFFIX) $(libdir)/libwebsh.so
 
-# mod_websh
+# mod_websh (only when --enable-apache / Apache headers found)
 install-libraries: install-dirs libraries
+	mkdir -p $(moddir)
 	cp -f mod_websh$(VERSION).so $(moddir)
 	rm -f $(moddir)/mod_websh.so
-	ln -s mod_websh$(VERSION).so $(moddir)/mod_websh.so
+	ln -sf mod_websh$(VERSION).so $(moddir)/mod_websh.so
+	rm -f $(moddir)/libwebsh$(SHARED_LIB_SUFFIX)
+	ln -sf $(pkgdir)/libwebsh$(SHARED_LIB_SUFFIX) $(moddir)/libwebsh$(SHARED_LIB_SUFFIX)
 
 # documentation / sample mod_websh setup
 install-doc: install-dirs
@@ -370,8 +371,8 @@ install-doc: install-dirs
 # create destination directories
 install-dirs:
 	mkdir -p $(bindir)
+	mkdir -p $(pkgdir)
 	mkdir -p $(libdir)
-	mkdir -p $(moddir)
 	mkdir -p $(sharedir)
 	mkdir -p $(docdir)
 	mkdir -p $(cfgdir)
