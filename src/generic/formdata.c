@@ -432,6 +432,10 @@ int parseMultipartFormData(RequestData * requestData, Tcl_Interp * interp,
     Tcl_GetChannelOption(interp, channel, "-translation", &translation);
     Tcl_GetChannelOption(interp, channel, "-encoding", &encoding);
     Tcl_SetChannelOption(interp, channel, "-translation", "binary");
+    /* -translation binary implicitly sets -encoding binary; restore the
+       original encoding so that multi-byte sequences (e.g. UTF-8) are decoded
+       correctly when reading text form fields. */
+    Tcl_SetChannelOption(interp, channel, "-encoding", Tcl_DStringValue(&encoding));
 
     paramListSet(requestData->request, "CONTENT_ENCODING", Tcl_NewStringObj(Tcl_DStringValue(&encoding), -1));
 
