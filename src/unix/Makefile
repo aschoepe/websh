@@ -21,8 +21,8 @@ BINARIES=$(lib_BINARIES)
 APACHE_TARGET = mod_websh.so
 # Set by configure: "install-libraries" when --enable-apache, empty otherwise
 INSTALL_APACHE = install-libraries
-LDCONFIG = /sbin/ldconfig -X
-SYSTEMCTL_APACHE = systemctl restart apache2
+LDCONFIG = :
+RESTART_APACHE = if test -n "$$SUDO_USER"; then sudo -u "$$SUDO_USER" HOMEBREW_SERVICES_NO_DOMAIN_WARNING=1 HOMEBREW_NO_ENV_HINTS=1 brew services restart httpd; else brew services restart httpd; fi
 
 SCRIPT_SOURCES = ../generic/context.tcl ../generic/script.ws3 ../generic/cookie.ws3 ../generic/sessctx.ws3 ../generic/filerandom.tcl ../generic/genpasswd.tcl ../generic/webutils.tcl ../generic/jwt.tcl
 
@@ -75,7 +75,7 @@ web_OBJECTS_ap = apchannel.o \
 
 OBJECTS = $(web_OBJECTS)
 
-web_LIB_FILE = libwebsh3.7.5.so
+web_LIB_FILE = libwebsh3.7.5.dylib
 $(web_LIB_FILE)_OBJECTS = $(web_OBJECTS)
 
 # =============================================================================
@@ -84,11 +84,11 @@ $(web_LIB_FILE)_OBJECTS = $(web_OBJECTS)
 
 GENERIC_HDRS=
 
-SHELL = /bin/bash
+SHELL = /bin/sh
 
 srcdir = .
-prefix = /usr/local/tcl86
-exec_prefix = /usr/local/tcl86
+prefix = /opt/tcl/8.6
+exec_prefix = /opt/tcl/8.6
 
 bindir = ${exec_prefix}/bin
 libdir = ${exec_prefix}/lib
@@ -100,9 +100,9 @@ cfgdir = $(sharedir)/conf
 
 PACKAGE = websh
 VERSION = 3.7.5
-CC = gcc
+CC = gcc -std=gnu23
 CFLAGS_DEBUG = -g
-CFLAGS_DEFAULT = -O2 -fomit-frame-pointer -DNDEBUG
+CFLAGS_DEFAULT = -Os -DNDEBUG
 CFLAGS_OPTIMIZE = -O2
 CFLAGS_WARNING = -Wall
 CLEANFILES = *pure* *.cov* ../tests/webtest.log ../tests/*.dat
@@ -113,8 +113,8 @@ MAKE_SHARED_LIB = ${SHLIB_LD} -o $@ $($@_OBJECTS) ${SHLIB_LDFLAGS} ${SHLIB_LD_LI
 MAKE_STATIC_LIB = ${STLIB_LD} $@ $(PKG_OBJECTS)
 OBJEXT = o
 RANLIB = :
-SHLIB_CFLAGS = -fPIC
-SHLIB_LD = ${CC} ${CFLAGS} ${LDFLAGS_DEFAULT} -shared
+SHLIB_CFLAGS = -fno-common
+SHLIB_LD = ${CC} -dynamiclib ${CFLAGS} ${LDFLAGS_DEFAULT} -current_version 3.7.5 -compatibility_version 3.7.5
 Platform=$(shell uname -s)
 ifeq ($(Platform),Darwin)
 SHLIB_LD_CURRENT = $(CC) -bundle -bundle_loader $(HTTPD_BIN) $(LDFLAGS)
@@ -124,40 +124,41 @@ SHLIB_LD_CURRENT = $(SHLIB_LD) $(TCL_LD_FLAGS)
 LDLIBPATHVAR = LD_LIBRARY_PATH
 endif
 SHLIB_LDFLAGS = 
-SHLIB_LD_LIBS = ${LIBS} -L/usr/local/tcl86/lib -ltclstub8.6
+SHLIB_LD_LIBS = ${LIBS} -L/Library/Frameworks/Tcl.framework -ltclstub8.6
 STLIB_LD = ${AR} cr
-APRU_LIBS = 
-TCL_BIN_DIR = /usr/local/tcl86/lib
-TCL_DEFS = -DPACKAGE_NAME=\"tcl\" -DPACKAGE_TARNAME=\"tcl\" -DPACKAGE_VERSION=\"8.6\" -DPACKAGE_STRING=\"tcl\ 8.6\" -DPACKAGE_BUGREPORT=\"\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_SYS_PARAM_H=1 -DUSE_THREAD_ALLOC=1 -D_REENTRANT=1 -D_THREAD_SAFE=1 -DHAVE_PTHREAD_ATTR_SETSTACKSIZE=1 -DHAVE_PTHREAD_ATFORK=1 -DTCL_THREADS=1 -DTCL_CFGVAL_ENCODING=\"iso8859-1\" -DHAVE_ZLIB=1 -DMODULE_SCOPE=extern\ __attribute__\(\(__visibility__\(\"hidden\"\)\)\) -DHAVE_HIDDEN=1 -DHAVE_CAST_TO_UNION=1 -DHAVE_VFORK=1 -DHAVE_POSIX_SPAWNP=1 -DHAVE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2=1 -DHAVE_POSIX_SPAWNATTR_SETFLAGS=1 -DTCL_SHLIB_EXT=\".so\" -DNDEBUG=1 -DTCL_CFG_OPTIMIZED=1 -DMP_PREC=4 -D_LARGEFILE64_SOURCE=1 -DTCL_WIDE_INT_IS_LONG=1 -DHAVE_GETCWD=1 -DHAVE_MKSTEMP=1 -DHAVE_OPENDIR=1 -DHAVE_STRTOL=1 -DHAVE_WAITPID=1 -DHAVE_GETNAMEINFO=1 -DHAVE_GETADDRINFO=1 -DHAVE_FREEADDRINFO=1 -DHAVE_GAI_STRERROR=1 -DHAVE_STRUCT_ADDRINFO=1 -DHAVE_STRUCT_IN6_ADDR=1 -DHAVE_STRUCT_SOCKADDR_IN6=1 -DHAVE_STRUCT_SOCKADDR_STORAGE=1 -DHAVE_GETPWUID_R_5=1 -DHAVE_GETPWUID_R=1 -DHAVE_GETPWNAM_R_5=1 -DHAVE_GETPWNAM_R=1 -DHAVE_GETGRGID_R_5=1 -DHAVE_GETGRGID_R=1 -DHAVE_GETGRNAM_R_5=1 -DHAVE_GETGRNAM_R=1 -DHAVE_DECL_GETHOSTBYNAME_R=1 -DHAVE_GETHOSTBYNAME_R_6=1 -DHAVE_GETHOSTBYNAME_R=1 -DHAVE_DECL_GETHOSTBYADDR_R=1 -DHAVE_GETHOSTBYADDR_R_8=1 -DHAVE_GETHOSTBYADDR_R=1 -DHAVE_TERMIOS_H=1 -DHAVE_SYS_IOCTL_H=1 -DHAVE_SYS_TIME_H=1 -DTIME_WITH_SYS_TIME=1 -DHAVE_GMTIME_R=1 -DHAVE_LOCALTIME_R=1 -DHAVE_MKTIME=1 -DHAVE_TM_GMTOFF=1 -DHAVE_TIMEZONE_VAR=1 -DHAVE_STRUCT_STAT_ST_BLOCKS=1 -DHAVE_STRUCT_STAT_ST_BLKSIZE=1 -DHAVE_BLKCNT_T=1 -DHAVE_INTPTR_T=1 -DHAVE_UINTPTR_T=1 -DNO_UNION_WAIT=1 -DHAVE_SIGNED_CHAR=1 -DHAVE_LANGINFO=1 -DHAVE_MKSTEMPS=1 -DHAVE_FTS=1 -DHAVE_SYS_IOCTL_H=1 -DTCL_UNLOAD_DLLS=1 -DHAVE_CPUID=1  -DHAVE_GETRANDOM=1 -DHAVE_DEVICE_RANDOM=1 -DHAVE_DEVICE_URANDOM=1
-TCL_EXTRA_CFLAGS =  -pipe 
-TCL_LD_FLAGS =  -Wl,--export-dynamic 
-TCL_LIBS = -ldl -lz  -lpthread -lm
+APRU_LIBS =  -L/opt/homebrew/opt/apr/lib -lapr-1 -lpthread -L/opt/homebrew/opt/apr-util/lib -laprutil-1     -lexpat -liconv
+TCL_BIN_DIR = /Library/Frameworks/Tcl.framework
+TCL_DEFS = -DPACKAGE_NAME=\"tcl\" -DPACKAGE_TARNAME=\"tcl\" -DPACKAGE_VERSION=\"8.6\" -DPACKAGE_STRING=\"tcl\ 8.6\" -DPACKAGE_BUGREPORT=\"\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DNO_VALUES_H=1 -DHAVE_SYS_PARAM_H=1 -DUSE_THREAD_ALLOC=1 -D_REENTRANT=1 -D_THREAD_SAFE=1 -DHAVE_PTHREAD_ATTR_SETSTACKSIZE=1 -DHAVE_PTHREAD_ATFORK=1 -DTCL_THREADS=1 -DTCL_CFGVAL_ENCODING=\"iso8859-1\" -DHAVE_ZLIB=1 -DMODULE_SCOPE=extern\ __attribute__\(\(__visibility__\(\"hidden\"\)\)\) -DHAVE_HIDDEN=1 -DMAC_OSX_TCL=1 -DHAVE_COREFOUNDATION=1 -DHAVE_CAST_TO_UNION=1 -DHAVE_VFORK=1 -DHAVE_POSIX_SPAWNP=1 -DHAVE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2=1 -DHAVE_POSIX_SPAWNATTR_SETFLAGS=1 -DTCL_SHLIB_EXT=\".dylib\" -DNDEBUG=1 -DTCL_CFG_OPTIMIZED=1 -DMP_PREC=4 -DTCL_WIDE_INT_IS_LONG=1 -DHAVE_GETCWD=1 -DHAVE_MKSTEMP=1 -DHAVE_OPENDIR=1 -DHAVE_STRTOL=1 -DHAVE_WAITPID=1 -DHAVE_GETNAMEINFO=1 -DHAVE_GETADDRINFO=1 -DHAVE_FREEADDRINFO=1 -DHAVE_GAI_STRERROR=1 -DHAVE_STRUCT_ADDRINFO=1 -DHAVE_STRUCT_IN6_ADDR=1 -DHAVE_STRUCT_SOCKADDR_IN6=1 -DHAVE_STRUCT_SOCKADDR_STORAGE=1 -DHAVE_GETPWUID_R_5=1 -DHAVE_GETPWUID_R=1 -DHAVE_GETPWNAM_R_5=1 -DHAVE_GETPWNAM_R=1 -DHAVE_GETGRGID_R_5=1 -DHAVE_GETGRGID_R=1 -DHAVE_GETGRNAM_R_5=1 -DHAVE_GETGRNAM_R=1 -DHAVE_MTSAFE_GETHOSTBYNAME=1 -DHAVE_MTSAFE_GETHOSTBYADDR=1 -DHAVE_TERMIOS_H=1 -DHAVE_SYS_IOCTL_H=1 -DHAVE_SYS_TIME_H=1 -DTIME_WITH_SYS_TIME=1 -DHAVE_GMTIME_R=1 -DHAVE_LOCALTIME_R=1 -DHAVE_MKTIME=1 -DHAVE_TM_GMTOFF=1 -DHAVE_TIMEZONE_VAR=1 -DHAVE_STRUCT_STAT_ST_BLOCKS=1 -DHAVE_STRUCT_STAT_ST_BLKSIZE=1 -DHAVE_BLKCNT_T=1 -DHAVE_INTPTR_T=1 -DHAVE_UINTPTR_T=1 -DHAVE_SIGNED_CHAR=1 -DHAVE_LANGINFO=1 -DHAVE_CHFLAGS=1 -DHAVE_MKSTEMPS=1 -DHAVE_GETATTRLIST=1 -DHAVE_COPYFILE_H=1 -DHAVE_COPYFILE=1 -DHAVE_LIBKERN_OSATOMIC_H=1 -DHAVE_OSSPINLOCKLOCK=1 -DTCL_DEFAULT_ENCODING=\"utf-8\" -DTCL_LOAD_FROM_MEMORY=1 -DTCL_WIDE_CLICKS=1 -DHAVE_AVAILABILITYMACROS_H=1 -DHAVE_WEAK_IMPORT=1 -D_DARWIN_C_SOURCE=1 -DHAVE_FTS=1 -DHAVE_SYS_IOCTL_H=1 -DHAVE_SYS_FILIO_H=1 -DTCL_UNLOAD_DLLS=1 -DUSE_DTRACE=1 -DTCL_FRAMEWORK=1  -DHAVE_DEVICE_RANDOM=1 -DHAVE_DEVICE_URANDOM=1
+TCL_EXTRA_CFLAGS = -arch arm64 -arch x86_64 -pipe  -I/opt/homebrew/include -mmacosx-version-min=11.0 
+TCL_LD_FLAGS = -L/opt/homebrew/lib -Wl,-rpath,/opt/homebrew/lib -headerpad_max_install_names -Wl,-search_paths_first 
+TCL_LIBS =  -lz  -lpthread -framework CoreFoundation 
 TCL_SHLIB_LD_LIBS = ${LIBS}
-TCL_SRC_DIR = /root/src/tcl8.6.17
+TCL_SRC_DIR = /Users/alex/src/tcl8.6.17
 TCL_DBGX = 
 TCL_STUB_LIB_FILE = libtclstub8.6.a
-TCL_STUB_LIB_SPEC = -L/usr/local/tcl86/lib -ltclstub8.6
-TCL_LIB_SPEC = -L/usr/local/tcl86/lib -ltcl8.6
-TCLSH_PROG = /usr/local/tcl86/bin/tclsh8.6
-TCL_PACKAGE_PATH = /usr/local/tcl86/lib
+TCL_STUB_LIB_SPEC = -L/Library/Frameworks/Tcl.framework -ltclstub8.6
+TCL_LIB_SPEC = -F/Library/Frameworks -framework Tcl
+TCLSH_PROG = /opt/tcl/8.6/bin/tclsh8.6
+TCL_PACKAGE_PATH = /Library/Frameworks/Tcl.framework
 
 # uncomment the following line if you want to enable the
 # Tcl memory and checkmem commands in mod_websh
 #MEM_DEBUG_FLAGS = -DTCL_MEM_DEBUG
 
-SHARED_LIB_SUFFIX = 3.7.5.so
+SHARED_LIB_SUFFIX = 3.7.5.dylib
+SHLIB_EXT = .dylib
 MODULE_LIB_SUFFIX = $(VERSION).so
 UNSHARED_LIB_SUFFIX = 3.7.5.a
 
-HTTPD_INCLUDES = -I/usr/include/apache2  -I/usr/include/apr-1.0   -I/usr/include/apr-1.0 -I/usr/include
+HTTPD_INCLUDES = -I/opt/homebrew/opt/httpd/include/httpd  -I/opt/homebrew/opt/apr/include/apr-1   -I/opt/homebrew/opt/apr-util/include/apr-1 -I/opt/homebrew/opt/openssl@3/include
 # needed for Darwin (OS X) only
-HTTPD_BIN = 
+HTTPD_BIN = /opt/homebrew/opt/httpd/bin/httpd
 
 AUTOCONF = autoconf
 
 LDFLAGS = $(LDFLAGS_DEFAULT)
 
-INCLUDES = -I"/usr/local/tcl86/include" $(HTTPD_INCLUDES)
+INCLUDES = -I"/Library/Frameworks/Tcl.framework/Headers" $(HTTPD_INCLUDES)
 
 # remove PACKAGE stuff: will cause warnings for Apache >2 and Tcl >=8.5
 FIXED_TCL_DEFS = $(filter-out -DPACKAGE_NAME=% -DPACKAGE_TARNAME=% -DPACKAGE_VERSION=% -DPACKAGE_STRING=% -DPACKAGE_BUGREPORT=% 8.% 9.%, $(TCL_DEFS))
@@ -173,7 +174,7 @@ ACLOCAL_M4 = $(srcdir)/aclocal.m4
 CPPFLAGS = 
 LIBS = 
 AR = ar
-CFLAGS =  -pipe ${CFLAGS_DEFAULT} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} 
+CFLAGS = -pipe  ${CFLAGS_DEFAULT} ${CFLAGS_WARNING} ${SHLIB_CFLAGS}  
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
@@ -281,7 +282,7 @@ mod_websh.so: mod_websh$(MODULE_LIB_SUFFIX)
 
 
 websh$(VERSION): tclAppInit.$(OBJEXT) $(web_LIB_FILE)
-	$(CC)  -Wl,--export-dynamic  tclAppInit.$(OBJEXT) $(web_LIB_FILE) \
+	$(CC)  -headerpad_max_install_names -Wl,-search_paths_first  tclAppInit.$(OBJEXT) $(web_LIB_FILE) \
 	$(TCL_LIB_SPEC) $(TCL_STUB_LIB_SPEC) $(TCL_LIBS) $(TCL_LD_FLAGS) \
 	-o websh$(VERSION)
 
@@ -297,7 +298,7 @@ mod_websh$(UNSHARED_LIB_SUFFIX): $(web_OBJECTS_ap) $(web_OBJECTS)
 pure: websh$(VERSION).pure
 
 websh$(VERSION).pure: tclAppInit.$(OBJEXT) $(web_LIB_FILE)
-	purify $(CC)  -Wl,--export-dynamic  tclAppInit.$(OBJEXT) $(web_LIB_FILE) \
+	purify $(CC)  -headerpad_max_install_names -Wl,-search_paths_first  tclAppInit.$(OBJEXT) $(web_LIB_FILE) \
 	$(TCL_LIB_SPEC) $(TCL_STUB_LIB_SPEC) $(TCL_LIBS) $(TCL_LD_FLAGS) \
 	-o websh$(VERSION).pure
 	-rm -f *_pure_*.o
@@ -305,7 +306,7 @@ websh$(VERSION).pure: tclAppInit.$(OBJEXT) $(web_LIB_FILE)
 cov: websh$(VERSION).cov
 
 websh$(VERSION).cov: tclAppInit.$(OBJEXT) $(web_LIB_FILE)
-	purecov $(CC)  -Wl,--export-dynamic  tclAppInit.$(OBJEXT) $(web_LIB_FILE) \
+	purecov $(CC)  -headerpad_max_install_names -Wl,-search_paths_first  tclAppInit.$(OBJEXT) $(web_LIB_FILE) \
 	$(TCL_LIB_SPEC) $(TCL_STUB_LIB_SPEC) $(TCL_LIBS) $(TCL_LD_FLAGS) \
 	-o websh$(VERSION).cov
 	-rm -f *_pure_*.o
@@ -319,7 +320,7 @@ websh$(VERSION).cov: tclAppInit.$(OBJEXT) $(web_LIB_FILE)
 clean:
 	-rm -f $(BINARIES)
 	-rm -f $(bin_BINARIES)
-	-rm -f websh[0-9]* libwebsh[0-9]*.so mod_websh[0-9]*.so
+	-rm -f websh[0-9]* libwebsh[0-9]*.so libwebsh[0-9]*.dylib mod_websh[0-9]*.so
 	-rm -f *.o core *.core
 	-rm -f *.$(OBJEXT)
 	-rm -f *pure* .*pure*
@@ -352,9 +353,9 @@ install-binaries: install-dirs binaries
 	cp -f pkgIndex.tcl $(pkgdir)
 	rm -f $(libdir)/libwebsh$(SHARED_LIB_SUFFIX)
 	ln -sf websh$(VERSION)/libwebsh$(SHARED_LIB_SUFFIX) $(libdir)/libwebsh$(SHARED_LIB_SUFFIX)
-	rm -f $(libdir)/libwebsh.so
-	ln -sf libwebsh$(SHARED_LIB_SUFFIX) $(libdir)/libwebsh.so
-	-test -z "$(LDCONFIG)" || $(LDCONFIG)
+	rm -f $(libdir)/libwebsh$(SHLIB_EXT)
+	ln -sf libwebsh$(SHARED_LIB_SUFFIX) $(libdir)/libwebsh$(SHLIB_EXT)
+	@$(LDCONFIG)
 
 # mod_websh (only when --enable-apache / Apache headers found)
 install-libraries: install-dirs libraries
@@ -364,7 +365,7 @@ install-libraries: install-dirs libraries
 	ln -sf mod_websh$(VERSION).so $(moddir)/mod_websh.so
 	rm -f $(moddir)/libwebsh$(SHARED_LIB_SUFFIX)
 	ln -sf $(pkgdir)/libwebsh$(SHARED_LIB_SUFFIX) $(moddir)/libwebsh$(SHARED_LIB_SUFFIX)
-	-test -z "$(SYSTEMCTL_APACHE)" || $(SYSTEMCTL_APACHE)
+	@$(RESTART_APACHE)
 
 # documentation / sample mod_websh setup
 install-doc: install-dirs

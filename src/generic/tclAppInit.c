@@ -53,9 +53,7 @@ extern int Tclxttest_Init _ANSI_ARGS_((Tcl_Interp * interp));
  *----------------------------------------------------------------------
  */
 
-int main(argc, argv)
-     int argc;			/* Number of command-line arguments. */
-     char **argv;		/* Values of command-line arguments. */
+int main(int argc, char **argv)
 {
     /*
      * The following #if block allows you to change the AppInit

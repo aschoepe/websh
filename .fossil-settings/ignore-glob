@@ -1,5 +1,6 @@
 src/unix/*.o
 src/unix/*.so
+src/unix/*.dylib
 src/unix/websh3.*
 src/unix/autom4te.cache/*
 src/unix/config.log

@@ -216,7 +216,7 @@ if test "${enable_apache}" != "no"; then
 
         if test "`uname -s`" = "Darwin"; then shlibext=dylib; else shlibext=so; fi
 
-        # APR library
+        # APR library — auto-detect via apr-1-config, override with --with-apr
         AC_ARG_WITH([apr],
             AS_HELP_STRING([--with-apr=DIR],[directory containing APR library]),
             [with_apr=${withval}], [with_apr=NA])
@@ -224,9 +224,26 @@ if test "${enable_apache}" != "no"; then
             test -f "${with_apr}/libapr-1.${shlibext}" || \
                 AC_MSG_ERROR([${with_apr}: does not contain libapr-1.${shlibext}])
             APR_LIB="-L\"${with_apr}\" -lapr-1"
+        else
+            AC_MSG_CHECKING([for APR link flags])
+            if test -z "${apr_cfg}"; then
+                apr_cfg=`which apr-1-config 2>/dev/null`
+                if test -z "${apr_cfg}" && test -n "${BREW_PREFIX}"; then
+                    apr_cfg="${BREW_PREFIX}/opt/apr/bin/apr-1-config"
+                    test -f "${apr_cfg}" || apr_cfg=
+                fi
+            fi
+            if test -n "${apr_cfg}"; then
+                APR_LIB=`${apr_cfg} --link-ld --libs 2>/dev/null`
+            fi
+            if test -n "${APR_LIB}"; then
+                AC_MSG_RESULT([${APR_LIB}])
+            else
+                AC_MSG_RESULT([not found — apr-1-config missing, try --with-apr=DIR])
+            fi
         fi
 
-        # APU library
+        # APU library — auto-detect via apu-1-config, override with --with-apu
         AC_ARG_WITH([apu],
             AS_HELP_STRING([--with-apu=DIR],[directory containing APR-util library]),
             [with_apu=${withval}], [with_apu=NA])
@@ -234,6 +251,23 @@ if test "${enable_apache}" != "no"; then
             test -f "${with_apu}/libaprutil-1.${shlibext}" || \
                 AC_MSG_ERROR([${with_apu}: does not contain libaprutil-1.${shlibext}])
             APU_LIB="-L\"${with_apu}\" -laprutil-1"
+        else
+            AC_MSG_CHECKING([for APU link flags])
+            if test -z "${apu_cfg}"; then
+                apu_cfg=`which apu-1-config 2>/dev/null`
+                if test -z "${apu_cfg}" && test -n "${BREW_PREFIX}"; then
+                    apu_cfg="${BREW_PREFIX}/opt/apr-util/bin/apu-1-config"
+                    test -f "${apu_cfg}" || apu_cfg=
+                fi
+            fi
+            if test -n "${apu_cfg}"; then
+                APU_LIB=`${apu_cfg} --link-ld --libs 2>/dev/null`
+            fi
+            if test -n "${APU_LIB}"; then
+                AC_MSG_RESULT([${APU_LIB}])
+            else
+                AC_MSG_RESULT([not found — apu-1-config missing, try --with-apu=DIR])
+            fi
         fi
 
         APACHE_TARGET="mod_websh.so"
@@ -284,8 +318,13 @@ AC_SUBST(MAKE_SHARED_LIB)
 web_LIB_FILE="$PKG_LIB_FILE"
 AC_SUBST(web_LIB_FILE)
 
-SHARED_LIB_SUFFIX="${PACKAGE_VERSION}.so"
+case "`uname -s`" in
+    Darwin*) SHLIB_EXT=".dylib" ;;
+    *)       SHLIB_EXT=".so"   ;;
+esac
+SHARED_LIB_SUFFIX="${PACKAGE_VERSION}${SHLIB_EXT}"
 UNSHARED_LIB_SUFFIX="${PACKAGE_VERSION}.a"
+AC_SUBST(SHLIB_EXT)
 AC_SUBST(SHARED_LIB_SUFFIX)
 AC_SUBST(UNSHARED_LIB_SUFFIX)
 
@@ -355,11 +394,13 @@ AC_CHECK_FILE([/dev/urandom],
 AC_SUBST(TCL_DEFS)
 
 #--------------------------------------------------------------------
-# Linux post-install helpers (ldconfig, systemctl)
+# Post-install helpers (ldconfig on Linux, Apache restart per platform)
+# Defaults are ":" (no-op) so the Makefile rule stays valid on platforms
+# where these helpers do not apply.
 #--------------------------------------------------------------------
 
-LDCONFIG=
-SYSTEMCTL_APACHE=
+LDCONFIG=":"
+RESTART_APACHE=":"
 case "`uname -s`" in
 Linux*)
     for f in /sbin/ldconfig /usr/sbin/ldconfig; do
@@ -368,14 +409,24 @@ Linux*)
     if command -v systemctl >/dev/null 2>&1; then
         for svc in apache2 httpd; do
             if systemctl cat ${svc} >/dev/null 2>&1; then
-                SYSTEMCTL_APACHE="systemctl restart ${svc}"; break
+                RESTART_APACHE="systemctl restart ${svc}"; break
             fi
         done
     fi
     ;;
+Darwin*)
+    if command -v brew >/dev/null 2>&1; then
+        brew_prefix=`brew --prefix 2>/dev/null`
+        if test -n "${brew_prefix}" -a -d "${brew_prefix}/opt/httpd"; then
+            # Run brew as the original user when invoked via sudo, so brew
+            # does not chown httpd paths to root:admin.
+            RESTART_APACHE='if test -n "$$SUDO_USER"; then sudo -u "$$SUDO_USER" HOMEBREW_SERVICES_NO_DOMAIN_WARNING=1 HOMEBREW_NO_ENV_HINTS=1 brew services restart httpd; else brew services restart httpd; fi'
+        fi
+    fi
+    ;;
 esac
 AC_SUBST(LDCONFIG)
-AC_SUBST(SYSTEMCTL_APACHE)
+AC_SUBST(RESTART_APACHE)
 
 #--------------------------------------------------------------------
 # Generate output files

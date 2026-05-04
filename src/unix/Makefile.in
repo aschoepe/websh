@@ -22,7 +22,7 @@ APACHE_TARGET = @APACHE_TARGET@
 # Set by configure: "install-libraries" when --enable-apache, empty otherwise
 INSTALL_APACHE = @INSTALL_APACHE@
 LDCONFIG = @LDCONFIG@
-SYSTEMCTL_APACHE = @SYSTEMCTL_APACHE@
+RESTART_APACHE = @RESTART_APACHE@
 
 SCRIPT_SOURCES = ../generic/context.tcl ../generic/script.ws3 ../generic/cookie.ws3 ../generic/sessctx.ws3 ../generic/filerandom.tcl ../generic/genpasswd.tcl ../generic/webutils.tcl ../generic/jwt.tcl
 
@@ -146,6 +146,7 @@ TCL_PACKAGE_PATH = @TCL_PACKAGE_PATH@
 #MEM_DEBUG_FLAGS = -DTCL_MEM_DEBUG
 
 SHARED_LIB_SUFFIX = @SHARED_LIB_SUFFIX@
+SHLIB_EXT = @SHLIB_EXT@
 MODULE_LIB_SUFFIX = $(VERSION).so
 UNSHARED_LIB_SUFFIX = @UNSHARED_LIB_SUFFIX@
 
@@ -319,7 +320,7 @@ websh$(VERSION).cov: tclAppInit.$(OBJEXT) $(web_LIB_FILE)
 clean:
 	-rm -f $(BINARIES)
 	-rm -f $(bin_BINARIES)
-	-rm -f websh[0-9]* libwebsh[0-9]*.so mod_websh[0-9]*.so
+	-rm -f websh[0-9]* libwebsh[0-9]*.so libwebsh[0-9]*.dylib mod_websh[0-9]*.so
 	-rm -f *.o core *.core
 	-rm -f *.$(OBJEXT)
 	-rm -f *pure* .*pure*
@@ -352,9 +353,9 @@ install-binaries: install-dirs binaries
 	cp -f pkgIndex.tcl $(pkgdir)
 	rm -f $(libdir)/libwebsh$(SHARED_LIB_SUFFIX)
 	ln -sf websh$(VERSION)/libwebsh$(SHARED_LIB_SUFFIX) $(libdir)/libwebsh$(SHARED_LIB_SUFFIX)
-	rm -f $(libdir)/libwebsh.so
-	ln -sf libwebsh$(SHARED_LIB_SUFFIX) $(libdir)/libwebsh.so
-	-test -z "$(LDCONFIG)" || $(LDCONFIG)
+	rm -f $(libdir)/libwebsh$(SHLIB_EXT)
+	ln -sf libwebsh$(SHARED_LIB_SUFFIX) $(libdir)/libwebsh$(SHLIB_EXT)
+	@$(LDCONFIG)
 
 # mod_websh (only when --enable-apache / Apache headers found)
 install-libraries: install-dirs libraries
@@ -364,7 +365,7 @@ install-libraries: install-dirs libraries
 	ln -sf mod_websh$(VERSION).so $(moddir)/mod_websh.so
 	rm -f $(moddir)/libwebsh$(SHARED_LIB_SUFFIX)
 	ln -sf $(pkgdir)/libwebsh$(SHARED_LIB_SUFFIX) $(moddir)/libwebsh$(SHARED_LIB_SUFFIX)
-	-test -z "$(SYSTEMCTL_APACHE)" || $(SYSTEMCTL_APACHE)
+	@$(RESTART_APACHE)
 
 # documentation / sample mod_websh setup
 install-doc: install-dirs
