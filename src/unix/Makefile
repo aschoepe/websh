@@ -108,8 +108,8 @@ CFLAGS_WARNING = -Wall
 CLEANFILES = *pure* *.cov* ../tests/webtest.log ../tests/*.dat
 EXEEXT = 
 LDFLAGS_DEFAULT = 
-MAKE_LIB = ${SHLIB_LD} -o $@ $($@_OBJECTS) ${SHLIB_LDFLAGS} ${SHLIB_LD_LIBS}
-MAKE_SHARED_LIB = ${SHLIB_LD} -o $@ $($@_OBJECTS) ${SHLIB_LDFLAGS} ${SHLIB_LD_LIBS}
+MAKE_LIB = ${SHLIB_LD} -o $@ $($@_OBJECTS) ${SHLIB_LDFLAGS} ${SHLIB_LD_LIBS} ${SHLIB_INSTALL_NAME}
+MAKE_SHARED_LIB = ${SHLIB_LD} -o $@ $($@_OBJECTS) ${SHLIB_LDFLAGS} ${SHLIB_LD_LIBS} ${SHLIB_INSTALL_NAME}
 MAKE_STATIC_LIB = ${STLIB_LD} $@ $(PKG_OBJECTS)
 OBJEXT = o
 RANLIB = :
@@ -125,6 +125,7 @@ LDLIBPATHVAR = LD_LIBRARY_PATH
 endif
 SHLIB_LDFLAGS = 
 SHLIB_LD_LIBS = ${LIBS} -L/Library/Frameworks/Tcl.framework -ltclstub8.6
+SHLIB_INSTALL_NAME = -Wl,-install_name,$(pkgdir)/$(web_LIB_FILE)
 STLIB_LD = ${AR} cr
 APRU_LIBS =  -L/opt/homebrew/opt/apr/lib -lapr-1 -lpthread -L/opt/homebrew/opt/apr-util/lib -laprutil-1     -lexpat -liconv
 TCL_BIN_DIR = /Library/Frameworks/Tcl.framework
@@ -261,7 +262,7 @@ depend:
 
 $(web_LIB_FILE): $(web_OBJECTS)
 	-rm -f $(web_LIB_FILE)
-	${SHLIB_LD} -o $@ $($@_OBJECTS) ${SHLIB_LDFLAGS} ${SHLIB_LD_LIBS}
+	${SHLIB_LD} -o $@ $($@_OBJECTS) ${SHLIB_LDFLAGS} ${SHLIB_LD_LIBS} ${SHLIB_INSTALL_NAME}
 	$(RANLIB) $(web_LIB_FILE)
 
 script.h: ../generic/tcldecmt.tcl $(SCRIPT_SOURCES)

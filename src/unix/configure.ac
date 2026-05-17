@@ -309,8 +309,20 @@ TEA_MAKE_LIB
 
 # websh uses a dynamic $($@_OBJECTS) reference in the link rule;
 # override TEA's PKG_OBJECTS-based MAKE_LIB with the classic form.
-MAKE_LIB='${SHLIB_LD} -o $@ $($@_OBJECTS) ${SHLIB_LDFLAGS} ${SHLIB_LD_LIBS}'
-MAKE_SHARED_LIB='${SHLIB_LD} -o $@ $($@_OBJECTS) ${SHLIB_LDFLAGS} ${SHLIB_LD_LIBS}'
+#
+# On macOS, embed an absolute install_name so dyld finds libwebsh
+# regardless of the loader's CWD (Apache's LaunchAgent runs with CWD=/,
+# where dyld cannot resolve a bare-name LC_LOAD_DYLIB). On other platforms
+# libraries are located via SONAME + ldconfig, so SHLIB_INSTALL_NAME is
+# left empty.
+case "`uname -s`" in
+    Darwin*) SHLIB_INSTALL_NAME='-Wl,-install_name,$(pkgdir)/$(web_LIB_FILE)' ;;
+    *)       SHLIB_INSTALL_NAME='' ;;
+esac
+AC_SUBST(SHLIB_INSTALL_NAME)
+
+MAKE_LIB='${SHLIB_LD} -o $@ $($@_OBJECTS) ${SHLIB_LDFLAGS} ${SHLIB_LD_LIBS} ${SHLIB_INSTALL_NAME}'
+MAKE_SHARED_LIB='${SHLIB_LD} -o $@ $($@_OBJECTS) ${SHLIB_LDFLAGS} ${SHLIB_LD_LIBS} ${SHLIB_INSTALL_NAME}'
 AC_SUBST(MAKE_LIB)
 AC_SUBST(MAKE_SHARED_LIB)
 
