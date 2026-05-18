@@ -1,0 +1,206 @@
+#
+# jwt.test -- ::jwt::sign / ::jwt::verify (compiled-in jwt.tcl)
+#
+# Copyright (C) 2026 by Alexander Schoepe, Bochum, DE
+# All rights reserved.
+#
+# See the file "license.terms" for information on usage and
+# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+
+#------------------------------------------------------------------------------
+# tcltest package
+#------------------------------------------------------------------------------
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import ::tcltest::*
+}
+
+#------------------------------------------------------------------------------
+# constraint: ::jwt needs nacl + rl_json (external C packages)
+#------------------------------------------------------------------------------
+
+testConstraint jwtDeps [expr {
+    ![catch {package require jwt}] &&
+    ![catch {package require nacl}] &&
+    ![catch {package require rl_json}]
+}]
+
+set jwtHeader  {{"alg":"HS256","typ":"JWT"}}
+set jwtPayload {{"sub":"alice","exp":1893456000}}
+set jwtSecret  topsecret
+
+#------------------------------------------------------------------------------
+# sign
+#------------------------------------------------------------------------------
+
+test jwt-sign-1.1 {sign yields a three-part token} {jwtDeps} {
+    set tok [::jwt::sign $jwtHeader $jwtPayload $jwtSecret]
+    llength [split $tok .]
+} {3}
+
+#------------------------------------------------------------------------------
+# verify without -json -> boolean (unchanged behaviour)
+#------------------------------------------------------------------------------
+
+test jwt-verify-1.1 {verify, correct secret, no -json -> true} {jwtDeps} {
+    set tok [::jwt::sign $jwtHeader $jwtPayload $jwtSecret]
+    ::jwt::verify $tok $jwtSecret
+} {true}
+
+test jwt-verify-1.2 {verify, wrong secret, no -json -> false} {jwtDeps} {
+    set tok [::jwt::sign $jwtHeader $jwtPayload $jwtSecret]
+    ::jwt::verify $tok wrongsecret
+} {false}
+
+#------------------------------------------------------------------------------
+# verify -json -> result document
+#   header/payload are JSON *string* values holding raw, re-parsable JSON text
+#------------------------------------------------------------------------------
+
+test jwt-verify-json-2.1 {-json: verify field is boolean true} {jwtDeps} {
+    set tok [::jwt::sign $jwtHeader $jwtPayload $jwtSecret]
+    set res [::jwt::verify $tok $jwtSecret -json]
+    rl_json::json get $res verify
+} {1}
+
+test jwt-verify-json-2.2 {-json: payload is raw re-parsable JSON text} {jwtDeps} {
+    set tok [::jwt::sign $jwtHeader $jwtPayload $jwtSecret]
+    set res [::jwt::verify $tok $jwtSecret -json]
+    rl_json::json get $res payload
+} {{"sub":"alice","exp":1893456000}}
+
+test jwt-verify-json-2.3 {-json: claim access via two-step json get} {jwtDeps} {
+    set tok [::jwt::sign $jwtHeader $jwtPayload $jwtSecret]
+    set res [::jwt::verify $tok $jwtSecret -json]
+    set claims [rl_json::json get $res payload]
+    list [rl_json::json get $claims exp] \
+         [rl_json::json get $claims sub] \
+         [rl_json::json exists $claims sub]
+} {1893456000 alice 1}
+
+test jwt-verify-json-2.4 {-json: header is raw re-parsable JSON text} {jwtDeps} {
+    set tok [::jwt::sign $jwtHeader $jwtPayload $jwtSecret]
+    set res [::jwt::verify $tok $jwtSecret -json]
+    set hdr [rl_json::json get $res header]
+    rl_json::json get $hdr alg
+} {HS256}
+
+test jwt-verify-json-2.5 {-json: wrong secret -> verify false, payload still readable} {jwtDeps} {
+    set tok [::jwt::sign $jwtHeader $jwtPayload $jwtSecret]
+    set res [::jwt::verify $tok wrongsecret -json]
+    list [rl_json::json get $res verify] \
+         [rl_json::json get [rl_json::json get $res payload] sub]
+} {0 alice}
+
+test jwt-verify-json-2.6 {-json without -claims has no reason key (contract stable)} {jwtDeps} {
+    set tok [::jwt::sign $jwtHeader $jwtPayload $jwtSecret]
+    set res [::jwt::verify $tok $jwtSecret -json]
+    lsort [rl_json::json keys $res]
+} {header payload verify}
+
+#------------------------------------------------------------------------------
+# -claims: opt-in exp/nbf validation (default stays signature-only)
+#------------------------------------------------------------------------------
+
+test jwt-claims-3.1 {default: expired token without -claims still verifies (sig only)} {jwtDeps} {
+    set exp [expr {[clock seconds] - 3600}]
+    set tok [::jwt::sign $jwtHeader [subst {{"sub":"a","exp":$exp}}] $jwtSecret]
+    ::jwt::verify $tok $jwtSecret
+} {true}
+
+test jwt-claims-3.2 {-claims: valid (exp in future) -> true} {jwtDeps} {
+    set exp [expr {[clock seconds] + 3600}]
+    set tok [::jwt::sign $jwtHeader [subst {{"sub":"a","exp":$exp}}] $jwtSecret]
+    ::jwt::verify $tok $jwtSecret -claims
+} {true}
+
+test jwt-claims-3.3 {-claims: expired (exp in past) -> false} {jwtDeps} {
+    set exp [expr {[clock seconds] - 3600}]
+    set tok [::jwt::sign $jwtHeader [subst {{"sub":"a","exp":$exp}}] $jwtSecret]
+    ::jwt::verify $tok $jwtSecret -claims
+} {false}
+
+test jwt-claims-3.4 {-claims: not-yet-active (nbf in future) -> false} {jwtDeps} {
+    set nbf [expr {[clock seconds] + 3600}]
+    set tok [::jwt::sign $jwtHeader [subst {{"sub":"a","nbf":$nbf}}] $jwtSecret]
+    ::jwt::verify $tok $jwtSecret -claims
+} {false}
+
+test jwt-claims-3.5 {-claims: no time claims present -> true} {jwtDeps} {
+    set tok [::jwt::sign $jwtHeader {{"sub":"a"}} $jwtSecret]
+    ::jwt::verify $tok $jwtSecret -claims
+} {true}
+
+test jwt-claims-json-4.1 {-claims -json: valid -> verify 1, reason ok} {jwtDeps} {
+    set exp [expr {[clock seconds] + 3600}]
+    set tok [::jwt::sign $jwtHeader [subst {{"sub":"a","exp":$exp}}] $jwtSecret]
+    set res [::jwt::verify $tok $jwtSecret -claims -json]
+    list [rl_json::json get $res verify] [rl_json::json get $res reason]
+} {1 ok}
+
+test jwt-claims-json-4.2 {-claims -json: expired -> verify 0, reason expired} {jwtDeps} {
+    set exp [expr {[clock seconds] - 3600}]
+    set tok [::jwt::sign $jwtHeader [subst {{"sub":"a","exp":$exp}}] $jwtSecret]
+    set res [::jwt::verify $tok $jwtSecret -claims -json]
+    list [rl_json::json get $res verify] [rl_json::json get $res reason]
+} {0 expired}
+
+test jwt-claims-json-4.3 {-claims -json: nbf future -> verify 0, reason notbefore} {jwtDeps} {
+    set nbf [expr {[clock seconds] + 3600}]
+    set tok [::jwt::sign $jwtHeader [subst {{"sub":"a","nbf":$nbf}}] $jwtSecret]
+    set res [::jwt::verify $tok $jwtSecret -claims -json]
+    list [rl_json::json get $res verify] [rl_json::json get $res reason]
+} {0 notbefore}
+
+test jwt-claims-json-4.4 {-claims -json: bad signature -> verify 0, reason signature} {jwtDeps} {
+    set exp [expr {[clock seconds] + 3600}]
+    set tok [::jwt::sign $jwtHeader [subst {{"sub":"a","exp":$exp}}] $jwtSecret]
+    set res [::jwt::verify $tok wrongsecret -claims -json]
+    list [rl_json::json get $res verify] [rl_json::json get $res reason]
+} {0 signature}
+
+#------------------------------------------------------------------------------
+# -leeway: clock-skew tolerance (only effective together with -claims)
+#------------------------------------------------------------------------------
+
+test jwt-leeway-5.1 {expired within leeway window -> true} {jwtDeps} {
+    set exp [expr {[clock seconds] - 100}]
+    set tok [::jwt::sign $jwtHeader [subst {{"sub":"a","exp":$exp}}] $jwtSecret]
+    ::jwt::verify $tok $jwtSecret -claims -leeway 200
+} {true}
+
+test jwt-leeway-5.2 {expired beyond leeway window -> false} {jwtDeps} {
+    set exp [expr {[clock seconds] - 100}]
+    set tok [::jwt::sign $jwtHeader [subst {{"sub":"a","exp":$exp}}] $jwtSecret]
+    ::jwt::verify $tok $jwtSecret -claims -leeway 50
+} {false}
+
+test jwt-leeway-5.3 {nbf within leeway window -> true} {jwtDeps} {
+    set nbf [expr {[clock seconds] + 100}]
+    set tok [::jwt::sign $jwtHeader [subst {{"sub":"a","nbf":$nbf}}] $jwtSecret]
+    ::jwt::verify $tok $jwtSecret -claims -leeway 200
+} {true}
+
+test jwt-leeway-5.4 {leeway without -claims is a no-op (signature only)} {jwtDeps} {
+    set exp [expr {[clock seconds] - 100}]
+    set tok [::jwt::sign $jwtHeader [subst {{"sub":"a","exp":$exp}}] $jwtSecret]
+    ::jwt::verify $tok $jwtSecret -leeway 200
+} {true}
+
+test jwt-leeway-5.5 {non-integer leeway treated as 0} {jwtDeps} {
+    set exp [expr {[clock seconds] - 100}]
+    set tok [::jwt::sign $jwtHeader [subst {{"sub":"a","exp":$exp}}] $jwtSecret]
+    ::jwt::verify $tok $jwtSecret -claims -leeway xx
+} {false}
+
+test jwt-leeway-json-5.6 {-leeway rescues expired token: verify 1, reason ok} {jwtDeps} {
+    set exp [expr {[clock seconds] - 100}]
+    set tok [::jwt::sign $jwtHeader [subst {{"sub":"a","exp":$exp}}] $jwtSecret]
+    set res [::jwt::verify $tok $jwtSecret -claims -leeway 200 -json]
+    list [rl_json::json get $res verify] [rl_json::json get $res reason]
+} {1 ok}
+
+# cleanup
+::tcltest::cleanupTests

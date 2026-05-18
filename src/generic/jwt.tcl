@@ -99,6 +99,7 @@ namespace eval ::jwt {
     set unsignedToken [join [list $header64url $payload64url] .]
 
     set header [base64url_decode $header64url]
+    set payload [base64url_decode $payload64url]
     set signature [base64url_decode $signature64url]
 
     set secret [checkSecret $secret]
@@ -121,10 +122,57 @@ namespace eval ::jwt {
         }
       }
     }
+
+    # Opt-in time-claim validation (RFC 7519). Default is signature-only:
+    # without -claims, exp/nbf are NOT evaluated and behaviour is unchanged.
+    # With -claims, a signature-valid token is additionally rejected when
+    # not-yet-active (nbf - leeway > now) or expired (exp + leeway <= now).
+    # Optional clock-skew tolerance: -leeway <seconds> (default 0; only
+    # effective together with -claims; a non-integer/negative value is
+    # treated as 0). Precedence: signature -> notbefore -> expired.
+    # 'reason' is one of: ok signature notbefore expired payload.
+    set reason [expr {$verify ? {ok} : {signature}}]
+    if {$verify && {-claims} in $args} {
+      set now [clock seconds]
+      set leeway 0
+      set li [lsearch -exact $args -leeway]
+      if {$li >= 0} {
+        set leeway [lindex $args [expr {$li + 1}]]
+        if {![string is integer -strict $leeway] || $leeway < 0} {
+          set leeway 0
+        }
+      }
+      if {[catch {
+        if {[json exists $payload nbf] && [json get $payload nbf] - $leeway > $now} {
+          set verify false
+          set reason notbefore
+        } elseif {[json exists $payload exp] && [json get $payload exp] + $leeway <= $now} {
+          set verify false
+          set reason expired
+        }
+      }]} {
+        set verify false
+        set reason payload
+      }
+    }
+
     if {{-json} in $args} {
+      # Result document. header/payload are stored as JSON *string* values
+      # holding the raw JSON text (not embedded objects), so every field of
+      # the result yields directly usable text/boolean:
+      #   json get $res verify   -> 1 / 0           (boolean)
+      #   json get $res header   -> {"alg":"HS256",...}   (re-parsable text)
+      #   json get $res payload  -> {"sub":"alice",...}   (re-parsable text)
+      # Read a claim in two steps:
+      #   set claims [json get $res payload]
+      #   json get $claims exp
+      # With -claims, an extra 'reason' field is added (see above).
       json set jo verify $verify
-      json set jo header $header
-      json set jo payload [base64url_decode $payload64url]
+      json set jo header [json string $header]
+      json set jo payload [json string $payload]
+      if {{-claims} in $args} {
+        json set jo reason $reason
+      }
       return $jo
     } else {
       return $verify
