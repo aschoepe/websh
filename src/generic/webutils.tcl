@@ -106,12 +106,20 @@ proc web::sessionNew { {timeout 3600000} {subject subject} {audience audience} {
   return {}
 }
 
-# uuid for testing only, not needed in real life - delivered over AUTH_BEARER
+# If $uuid is given it wins over AUTH_BEARER. Use this whenever the
+# request authenticates with something OTHER than the refresh-jti (e.g.
+# an access-JWT whose claims carry the session id) and you want to load
+# a known session by id. Without an explicit $uuid the session id is
+# taken from the AUTH_BEARER request header as before.
 proc web::sessionInit { {uuid {}} } {
   variable configContext
   variable sessionContext
 
-  set id [web::request AUTH_BEARER $uuid]
+  if {$uuid ne {}} {
+    set id $uuid
+  } else {
+    set id [web::request AUTH_BEARER {}]
+  }
 
   if {$id eq {}} {
     web::log info "Authorization Bearer not found"
