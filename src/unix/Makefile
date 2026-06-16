@@ -75,7 +75,7 @@ web_OBJECTS_ap = apchannel.o \
 
 OBJECTS = $(web_OBJECTS)
 
-web_LIB_FILE = libwebsh3.7.5.dylib
+web_LIB_FILE = libwebsh3.7.6.dylib
 $(web_LIB_FILE)_OBJECTS = $(web_OBJECTS)
 
 # =============================================================================
@@ -99,7 +99,7 @@ docdir = $(sharedir)/htdocs
 cfgdir = $(sharedir)/conf
 
 PACKAGE = websh
-VERSION = 3.7.5
+VERSION = 3.7.6
 CC = gcc -std=gnu23
 CFLAGS_DEBUG = -g
 CFLAGS_DEFAULT = -Os -DNDEBUG
@@ -114,7 +114,7 @@ MAKE_STATIC_LIB = ${STLIB_LD} $@ $(PKG_OBJECTS)
 OBJEXT = o
 RANLIB = :
 SHLIB_CFLAGS = -fno-common
-SHLIB_LD = ${CC} -dynamiclib ${CFLAGS} ${LDFLAGS_DEFAULT} -current_version 3.7.5 -compatibility_version 3.7.5
+SHLIB_LD = ${CC} -dynamiclib ${CFLAGS} ${LDFLAGS_DEFAULT} -current_version 3.7.6 -compatibility_version 3.7.6
 Platform=$(shell uname -s)
 ifeq ($(Platform),Darwin)
 SHLIB_LD_CURRENT = $(CC) -bundle -bundle_loader $(HTTPD_BIN) $(LDFLAGS)
@@ -146,10 +146,10 @@ TCL_PACKAGE_PATH = /Library/Frameworks/Tcl.framework
 # Tcl memory and checkmem commands in mod_websh
 #MEM_DEBUG_FLAGS = -DTCL_MEM_DEBUG
 
-SHARED_LIB_SUFFIX = 3.7.5.dylib
+SHARED_LIB_SUFFIX = 3.7.6.dylib
 SHLIB_EXT = .dylib
 MODULE_LIB_SUFFIX = $(VERSION).so
-UNSHARED_LIB_SUFFIX = 3.7.5.a
+UNSHARED_LIB_SUFFIX = 3.7.6.a
 
 HTTPD_INCLUDES = -I/opt/homebrew/opt/httpd/include/httpd  -I/opt/homebrew/opt/apr/include/apr-1   -I/opt/homebrew/opt/apr-util/include/apr-1 -I/opt/homebrew/opt/openssl@3/include
 # needed for Darwin (OS X) only
@@ -168,7 +168,7 @@ EXTRA_CFLAGS = $(FIXED_TCL_DEFS) $(PROTO_FLAGS) $(SECURITY_FLAGS) \
 	$(MEM_DEBUG_FLAGS) $(KEYSYM_FLAGS) $(NO_DEPRECATED_FLAGS) \
 	$(TCL_EXTRA_CFLAGS)
 
-DEFS = -DVERSION=\"3.7.5\" -DSYSV=1 -DUSE_TCL_STUBS=1 $(EXTRA_CFLAGS)
+DEFS = -DVERSION=\"3.7.6\" -DSYSV=1 -DUSE_TCL_STUBS=1 $(EXTRA_CFLAGS)
 
 ACLOCAL_M4 = $(srcdir)/aclocal.m4
 
