@@ -1,27 +1,18 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 
-<!--
-$Id: quickref.xml 1096817 2011-04-26 17:36:58Z ronnie $
--->
-
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
   "http://www.oasis-open.org/committees/docbook/xml/4.1.2/docbookx.dtd">
 
 <article lang="en">
 
-  <title>Websh Reference 3.6.0b5</title>
-  <articleinfo>
-    <releaseinfo>
-      $Id: quickref.xml 1096817 2011-04-26 17:36:58Z ronnie $
-    </releaseinfo>
-  </articleinfo>
+  <title>Websh Reference 3.7.6</title>
   <section id="intro">
     <title>Introduction</title>
     <section id="general_remarks">
       <title>General remarks</title>
       <para>
-	Websh 3.6 (pronounced "web shell") embeds a Tcl interpreter,
-	(version 8.3 or higher) and all Tcl commands are available.
+	Websh 3.7 (pronounced "web shell") embeds a Tcl interpreter,
+	(version 8.6 or higher) and all Tcl commands are available.
       </para>
       <para>
 	Typically, Websh commands have the following syntax:
@@ -481,11 +472,13 @@ web::dispatch</programlisting>
       </para>
        <para>
          <note>
+	   <para>
 	    Note that there are two more commands that control
 	    the output of <command>web::cmdurl</command>:
 	    <command>web::config</command> <option>cmdparam</option>
 	    and
 	    <command>web::config</command> <option>timeparam</option>.
+	   </para>
 	 </note>
        </para>
       <example>
@@ -1360,8 +1353,9 @@ t cmd k
 	Subcommands are <option>-select</option>,
 	<option>-set</option>, <option>-lappend</option>,
 	<option>-names</option>, <option>-count</option>,
-	<option>-unset</option>, <option>-reset</option>, and
-	<option>-resetall</option> Options are
+	<option>-unset</option>, <option>-reset</option>,
+	<option>-resetall</option>, and <option>-flush</option>.
+	Options are
 	<option>-sendheader</option>, <option>-httpresponse</option>,
 	and <option>-bytessent</option>.</para><para>
 
@@ -1498,6 +1492,20 @@ t cmd k
 	  </varlistentry>
 	  <varlistentry>
 	    <term><command>web::response</command>
+	      <option>-flush</option></term>
+	    <listitem>
+	      <para>
+		Flushes the response channel immediately. In CGI mode
+		this flushes the Tcl channel buffer. Under mod_websh it
+		additionally pushes the pending output through Apache's
+		output filter chain to the network (ap_rflush), which
+		makes real-time streaming such as Server-Sent Events
+		possible. See <command>web::sseSend</command>.
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><command>web::response</command>
 	      <option>-reset</option></term>
 	    <listitem>
 	      <para>
@@ -1620,6 +1628,48 @@ Hello, world
 	should be sent to a global variable named
 	<option><replaceable>channel</replaceable></option> instead
 	of a Tcl channel.
+      </para>
+    </section>
+    <section id="web::sseStart">
+      <title><command>web::sseStart</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::sseStart</command>
+	</cmdsynopsis>
+	Starts a Server-Sent Events (SSE) response. Sets the response
+	headers <literal>Content-Type: text/event-stream</literal>,
+	<literal>Cache-Control: no-cache</literal>,
+	<literal>Connection: keep-alive</literal> and
+	<literal>X-Accel-Buffering: no</literal>, and disables
+	buffering on the response channel. Use
+	<command>web::sseSend</command> to emit events afterwards.
+      </para>
+    </section>
+    <section id="web::sseSend">
+      <title><command>web::sseSend</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::sseSend</command>
+	  <arg choice="req"><replaceable>data</replaceable></arg>
+	  <arg choice="opt"><replaceable>event</replaceable></arg>
+	  <arg choice="opt"><replaceable>id</replaceable></arg>
+	  <arg choice="opt"><replaceable>retry</replaceable></arg>
+	</cmdsynopsis>
+	Sends one SSE event and flushes the response via
+	<command>web::response -flush</command>. Multiline
+	<replaceable>data</replaceable> is split on newlines and
+	emitted as one <literal>data:</literal> line per segment; the
+	event is terminated with a blank line. The optional arguments
+	emit <literal>event:</literal>, <literal>id:</literal> and
+	<literal>retry:</literal> fields.
+      </para>
+      <para>
+	For keepalive in long-running connections send an SSE comment
+	(a line starting with &quot;:&quot;) followed by
+	<command>web::response -flush</command>; comments are ignored
+	by browsers but prevent proxy timeouts. See
+	<filename>examples/sse/</filename> for a complete
+	server/client example.
       </para>
     </section>
   </section>
@@ -1762,7 +1812,9 @@ web::logdest add -maxchar 25 -format &quot;%x %X \$l \$m\n&quot; *.-debug comman
         Levels defined using <command>web::loglevel</command> act as a
 	filter for log messages sent by Websh. Only messages that pass
 	at least one level defined using this command are passed to the
-	log destinations configured using <command>web::logdest</command>
+	log destinations configured using <command>web::logdest</command>.
+	<command>web::logfilter</command> is a compatibility alias for
+	<command>web::loglevel</command> (Websh 3.5 and earlier).
       </para>
       <para>
 	<variablelist>
@@ -1939,6 +1991,7 @@ logdest0
 	</para>
       </section>
       <section>
+	<title>Examples</title>
 	<example>
 	  <title><command>web::log</command>, <command>web::loglevel</command>, and <command>web::logdest</command></title>
 	  <programlisting>
@@ -2657,6 +2710,31 @@ file othertest.dat handle fc3 seed 1 min 1 max 10 incr 2 perms 0644 wrap true cu
 
 
     </section>
+    <section id="web::filerandom">
+      <title><command>web::filerandom</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::filerandom create</command>
+	  <arg choice="req"><replaceable>name</replaceable></arg>
+	  <arg choice="req"><replaceable>pathname</replaceable></arg>
+	</cmdsynopsis>
+	TclOO class: UUID version 4 id generator, intended as
+	<option>-idgen</option> for <command>web::filecontext</command>
+	(used by <command>web::sessionSetup</command>). Persists the
+	last issued UUID in
+	<filename><replaceable>pathname</replaceable>/lastUUID</filename>
+	and guarantees that a generated id does not collide with an
+	existing session file.
+      </para>
+      <para>
+	Methods: <option>nextval</option> (generate and persist a
+	fresh UUID v4), <option>curval</option> (last value returned
+	by nextval/getval, no file read), <option>getval</option>
+	(read current value from file, no generation), and
+	<option>config</option> (configuration as flat key-value
+	list).
+      </para>
+    </section>
   </section>
   <section id="file_handling_and_file_IO">
     <title>File handling and file I/O</title>
@@ -2889,6 +2967,75 @@ Hello, world!
       </para>
     </section>
   </section>
+  <section id="json_web_tokens">
+    <title>JSON Web Tokens (JWT)</title>
+    <para>
+      The compiled-in <literal>::jwt</literal> namespace provides JWT
+      signing and verification. It requires the external C packages
+      <literal>nacl</literal> and <literal>rl_json</literal> (loaded
+      on first use). Algorithms are selected via the header field
+      <literal>alg</literal>: <literal>HS256</literal> (default),
+      <literal>HS512</literal>, or <literal>NaCl</literal>. Secrets
+      are normalized to 32 bytes (zero-padded or truncated).
+    </para>
+    <section id="jwt::sign">
+      <title><command>::jwt::sign</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>::jwt::sign</command>
+	  <arg choice="req"><replaceable>header</replaceable></arg>
+	  <arg choice="req"><replaceable>payload</replaceable></arg>
+	  <arg choice="req"><replaceable>secret</replaceable></arg>
+	</cmdsynopsis>
+	<replaceable>header</replaceable> and
+	<replaceable>payload</replaceable> are JSON text. Returns the
+	signed token
+	<literal>header.payload.signature</literal> (base64url).
+      </para>
+    </section>
+    <section id="jwt::verify">
+      <title><command>::jwt::verify</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>::jwt::verify</command>
+	  <arg choice="req"><replaceable>token</replaceable></arg>
+	  <arg choice="req"><replaceable>secret</replaceable></arg>
+	  <arg choice="opt">-json</arg>
+	  <arg choice="opt">-claims</arg>
+	  <arg choice="opt">-leeway <replaceable>sec</replaceable></arg>
+	</cmdsynopsis>
+	Without options, returns a boolean (<literal>true</literal> /
+	<literal>false</literal>); this is a signature check only, the
+	time claims <literal>exp</literal> and <literal>nbf</literal>
+	are not evaluated.
+      </para>
+      <para>
+	With <option>-claims</option>, the RFC 7519 time claims are
+	additionally validated: a signature-valid token is rejected
+	when not yet active (<literal>nbf</literal> in the future) or
+	expired (<literal>exp</literal> in the past). Absent claims
+	are not enforced. <option>-leeway
+	<replaceable>sec</replaceable></option> adds a clock-skew
+	tolerance to both checks (default 0; only effective together
+	with <option>-claims</option>).
+      </para>
+      <para>
+	With <option>-json</option>, an <literal>rl_json</literal>
+	document is returned instead of a boolean. The fields
+	<literal>header</literal> and <literal>payload</literal> hold
+	the raw JSON text as string values (re-parsable), the field
+	<literal>verify</literal> is a boolean. When
+	<option>-claims</option> is also given, an additional field
+	<literal>reason</literal> is present with one of
+	<literal>ok</literal>, <literal>signature</literal>,
+	<literal>notbefore</literal>, <literal>expired</literal>, or
+	<literal>payload</literal>. Read a claim in two steps:
+	<programlisting>set res    [::jwt::verify $tok $secret -claims -json]
+set claims [json get $res payload]   ;# raw JSON text
+json get $claims sub</programlisting>
+      </para>
+    </section>
+  </section>
   <section id="uri-html-_en-decoding">
     <title>Uri-/html- en-/decoding</title>
     <section id="web::htmlify">
@@ -2947,6 +3094,26 @@ Hello, world!
       </cmdsynopsis>
       </para>
       <para>Decodes URI-compliant <option>text</option>.
+      </para>
+    </section>
+    <section id="web::list2uri">
+      <title><command>web::list2uri</command> and <command>web::uri2list</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::list2uri</command>
+	  <arg choice="req"><replaceable>list</replaceable></arg>
+	</cmdsynopsis>
+	<cmdsynopsis>
+	  <command>web::uri2list</command>
+	  <arg choice="req"><replaceable>string</replaceable></arg>
+	</cmdsynopsis>
+	Convert between an even-sized key/value list and a query
+	string. <command>web::list2uri</command> uri-encodes keys and
+	values and returns
+	<literal>k1=v1&amp;k2=v2</literal>;
+	it raises an error for lists with an odd number of
+	elements. <command>web::uri2list</command> is the inverse and
+	always returns a list with an even number of elements.
       </para>
       <example>
 	<title><command>web::htmlify</command></title>
@@ -3455,9 +3622,290 @@ proc web::interpmap {filename} {
 	<cmdsynopsis><command>web::tempfile</command>
 	  <arg choice="req">-remove</arg>
 	</cmdsynopsis>
-      Attempts to clean up all temporary 
-      files previously created using <command>web::tempfile</command> and 
+      Attempts to clean up all temporary
+      files previously created using <command>web::tempfile</command> and
       resets the internal list of these file names.
+      </para>
+    </section>
+    <section id="web::randombytes">
+      <title><command>web::randombytes</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::randombytes</command>
+	  <arg choice="req"><replaceable>count</replaceable></arg>
+	</cmdsynopsis>
+	Returns <replaceable>count</replaceable> cryptographically
+	secure random bytes.
+	<cmdsynopsis>
+	  <command>web::randombytes names</command>
+	</cmdsynopsis>
+	Lists the available random sources (e.g.
+	<literal>getrandom</literal>, <literal>random</literal>,
+	<literal>urandom</literal>, <literal>default</literal>;
+	platform dependent).
+	<cmdsynopsis>
+	  <command>web::randombytes source</command>
+	  <arg choice="req"><replaceable>name</replaceable></arg>
+	</cmdsynopsis>
+	Selects the random source.
+      </para>
+    </section>
+    <section id="web::ts">
+      <title><command>web::ts</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::ts</command>
+	  <arg choice="opt"><replaceable>ms</replaceable></arg>
+	</cmdsynopsis>
+	Generates an ISO-8601 timestamp
+	(<literal>2025-02-19T12:34:56.789</literal>). If the optional
+	parameter <replaceable>ms</replaceable> (milliseconds) is not
+	a valid wide integer, the current system time (from
+	<command>clock milliseconds</command>) is used.
+      </para>
+    </section>
+    <section id="web::configSetup">
+      <title><command>web::configSetup</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::configSetup</command>
+	  <arg choice="opt"><replaceable>context</replaceable></arg>
+	</cmdsynopsis>
+	Initializes the configuration context (default:
+	<literal>::config</literal>) by assigning the provided context
+	to the variable configContext and calling
+	<command>web::context</command> internally.
+      </para>
+    </section>
+    <section id="web::sessionSetup">
+      <title><command>web::sessionSetup</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::sessionSetup</command>
+	  <arg choice="opt"><replaceable>context</replaceable></arg>
+	</cmdsynopsis>
+	Initializes the session context (default:
+	<literal>::session</literal>). Stores the provided context in
+	sessionContext, creates a UUID v4 based id generator via
+	<command>web::filerandom</command>, and calls
+	<command>web::filecontext</command> with the appropriate path,
+	id generator, and disabled encryption (crypt off). Requires
+	<command>web::configSetup</command> first.
+      </para>
+    </section>
+    <section id="web::loggingSetup">
+      <title><command>web::loggingSetup</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::loggingSetup</command>
+	  <arg choice="req"><replaceable>level</replaceable></arg>
+	  <arg choice="opt"><replaceable>syslog</replaceable></arg>
+	</cmdsynopsis>
+	Configures logging by adding the specified logging level via
+	<command>web::loglevel add</command> and adding a syslog log
+	destination with a custom format (including the session tag).
+	The optional <replaceable>syslog</replaceable> parameter sets
+	the priority (default: 10). Note that this only wires the
+	syslog destination; under mod_websh add the
+	<literal>apache</literal> destination separately if messages
+	should appear in the Apache error log.
+      </para>
+    </section>
+    <section id="web::sessionGet">
+      <title><command>web::sessionGet</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::sessionGet</command>
+	</cmdsynopsis>
+	Returns a dictionary containing the current session data. The
+	dictionary includes the keys <literal>iss</literal> (Issuer),
+	<literal>sub</literal> (Subject), <literal>aud</literal>
+	(Audience), <literal>exp</literal> (Expiration Time),
+	<literal>nbf</literal> (Not Before), <literal>iat</literal>
+	(Issued At), <literal>jti</literal> (JWT ID), and
+	<literal>mlt</literal> (Max Life Time).
+      </para>
+    </section>
+    <section id="web::sessionNew">
+      <title><command>web::sessionNew</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::sessionNew</command>
+	  <arg choice="opt"><replaceable>timeout</replaceable></arg>
+	  <arg choice="opt"><replaceable>subject</replaceable></arg>
+	  <arg choice="opt"><replaceable>audience</replaceable></arg>
+	  <arg choice="opt"><replaceable>maxlifetime</replaceable></arg>
+	</cmdsynopsis>
+	Creates a new session. It computes session validity based on
+	the current time and the provided timeout (default: 3600000
+	ms), sets parameters such as Issuer (from SERVER_NAME),
+	Subject, Audience, Expiration Time, Not Before, Issued At, and
+	JWT ID (via the session context id), and optionally maximum
+	lifetime (mlt). A JSON string with the session data is sent
+	via the response header <literal>X-Session</literal>. Returns
+	the session id, or an empty string on failure.
+      </para>
+    </section>
+    <section id="web::sessionInit">
+      <title><command>web::sessionInit</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::sessionInit</command>
+	  <arg choice="opt"><replaceable>uuid</replaceable></arg>
+	</cmdsynopsis>
+	Initializes an existing session. The session id is taken from
+	the <replaceable>uuid</replaceable> argument if given,
+	otherwise from the AUTH_BEARER token obtained via
+	<command>web::request</command>. Returns false if no id is
+	found, if initialization fails, if the session is already
+	marked as closed, or if it has expired (exp/mlt); otherwise,
+	updates the session tag and logging and returns true.
+      </para>
+    </section>
+    <section id="web::sessionClose">
+      <title><command>web::sessionClose</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::sessionClose</command>
+	</cmdsynopsis>
+	Closes the current session by setting the sessionClosed flag
+	and committing the change. Also sets the response header
+	<literal>X-Status</literal> to
+	<literal>sessionClosed</literal> and returns the current
+	session data.
+      </para>
+    </section>
+    <section id="web::sessionRefresh">
+      <title><command>web::sessionRefresh</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::sessionRefresh</command>
+	  <arg choice="opt"><replaceable>timeout</replaceable></arg>
+	</cmdsynopsis>
+	Refreshes the session by updating the expiration time based on
+	the provided timeout (default: 3600000 ms), commits the
+	change, updates the <literal>X-Session</literal> response
+	header, and returns the current session data.
+      </para>
+    </section>
+    <section id="web::uuidV4">
+      <title><command>web::uuidV4</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::uuidV4</command>
+	</cmdsynopsis>
+	Generates a UUID version 4 by obtaining 16 random bytes via
+	<command>web::randombytes</command>, adjusting specific bits
+	as specified by the UUIDv4 standard, and formatting the result
+	as a string in the format 8-4-4-4-12.
+      </para>
+    </section>
+    <section id="web::getContent">
+      <title><command>web::getContent</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::getContent</command>
+	</cmdsynopsis>
+	Decodes the raw POST body (CONTENT_DATA) and returns it as a
+	string. The encoding is resolved in this order: the
+	<literal>charset=</literal> parameter of the Content-Type
+	header; for JSON content types without charset
+	(<literal>application/json</literal>,
+	<literal>*+json</literal>) UTF-8 as mandated by RFC 8259;
+	otherwise CONTENT_ENCODING; UTF-8 as final fallback. Always
+	use this instead of manually converting CONTENT_DATA.
+      </para>
+    </section>
+    <section id="web::mimeType">
+      <title><command>web::mimeType</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::mimeType</command>
+	  <arg choice="req"><replaceable>token</replaceable></arg>
+	</cmdsynopsis>
+	Determines the MIME type based on a given token. Supported
+	tokens include: bin, bz2, csv, docx, gz, ics, jpg, json, png,
+	pdf, rtf, svg, txt, xlsx, xml, zip, 7z. If the token is not
+	recognized, returns the original token.
+      </para>
+    </section>
+    <section id="web::returnJson">
+      <title><command>web::returnJson</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::returnJson</command>
+	  <arg choice="req"><replaceable>json</replaceable></arg>
+	</cmdsynopsis>
+	Sends a JSON response. Configures the response channel with
+	UTF-8 encoding, sets appropriate headers (Content-Type,
+	Content-Length, Cache-Control, etc.), sends the JSON data via
+	<command>web::put</command>, and resets the response.
+      </para>
+    </section>
+    <section id="web::returnText">
+      <title><command>web::returnText</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::returnText</command>
+	  <arg choice="req"><replaceable>mimetype</replaceable></arg>
+	  <arg choice="req"><replaceable>data</replaceable></arg>
+	  <arg choice="opt"><replaceable>encoding</replaceable></arg>
+	</cmdsynopsis>
+	Sends a text response. Sets the specified encoding (default:
+	utf-8) and MIME type (via <command>web::mimeType</command>),
+	calculates the content length, sets cache control headers,
+	outputs the text via <command>web::put</command>, and resets
+	the response.
+      </para>
+    </section>
+    <section id="web::returnBinary">
+      <title><command>web::returnBinary</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::returnBinary</command>
+	  <arg choice="req"><replaceable>mimetype</replaceable></arg>
+	  <arg choice="req"><replaceable>data</replaceable></arg>
+	  <arg choice="req"><replaceable>filename</replaceable></arg>
+	</cmdsynopsis>
+	Sends a binary response, typically used for file downloads.
+	Sets the response channel to binary mode, configures headers
+	(Content-Type, Content-Length, Content-Disposition with the
+	specified filename), sets cache control headers, sends the
+	binary data via <command>web::put</command>, and resets the
+	response.
+      </para>
+    </section>
+    <section id="web::genPasswd">
+      <title><command>web::genPasswd</command></title>
+      <para>
+	<cmdsynopsis>
+	  <command>web::genPasswd create</command>
+	  <arg choice="req"><replaceable>name</replaceable></arg>
+	  <arg choice="opt"><replaceable>len</replaceable></arg>
+	</cmdsynopsis>
+	<cmdsynopsis>
+	  <command><replaceable>name</replaceable> generate</command>
+	</cmdsynopsis>
+	<cmdsynopsis>
+	  <command><replaceable>name</replaceable> configure</command>
+	  <arg choice="opt"><replaceable>key</replaceable></arg>
+	  <arg choice="opt"><replaceable>value</replaceable></arg>
+	</cmdsynopsis>
+	TclOO class (package <literal>genpasswd</literal>, compiled
+	in): random password generator backed by
+	<command>web::randombytes</command> (CSPRNG; indices are drawn
+	with rejection sampling, so there is no modulo bias) with a
+	Fisher-Yates shuffle, suitable for real secrets. Defaults:
+	length 10 (constructor argument or <literal>configure len
+	n</literal>; values below 4 fall back to 10) with at least one
+	character from each class
+	(lower/upper/numbers/punctuation); ambiguous characters
+	(l, I, O, 0) are excluded from the alphabets.
+	<command>configure</command> without arguments returns all
+	rules (<literal>len</literal>, <literal>lower,min</literal>,
+	<literal>upper,min</literal>, <literal>numbers,min</literal>,
+	<literal>punctuation,min</literal>), with a key returns that
+	rule, and with key and value sets it.
       </para>
     </section>
   </section>

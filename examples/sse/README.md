@@ -1,4 +1,4 @@
-# Server-Sent Events (SSE) Example for websh 3.7.3
+# Server-Sent Events (SSE) Example for websh
 
 ## Files
 

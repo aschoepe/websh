@@ -4,12 +4,6 @@
   exclude-result-prefixes="doc"
   version='1.0'>
 
-  <!--
-  <xsl:output method="html"
-  encoding="ISO-8859-1"
-  indent="no"/>
-  -->
-
   <!-- ********************************************************************
   $Id: quickref.xsl 820920 2009-10-02 07:48:50Z ronnie $
   ********************************************************************
@@ -22,19 +16,19 @@
 
   <!-- ==================================================================== -->
 
+  <!-- Resolved via XML catalog to the locally installed DocBook XSL
+       stylesheets (macOS: brew install docbook-xsl docbook; Linux:
+       docbook-xsl package). See doc/Makefile for the catalog setup. -->
   <xsl:import
-    href="http://docbook.sourceforge.net/release/xsl/1.75.1/html/chunk.xsl"
+    href="http://docbook.sourceforge.net/release/xsl/current/html/chunk.xsl"
   />
-  <!-- local alternatives to the network URL for faster processing 
-  <xsl:import
-    href="/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/html/chunk.xsl"
-  />
-  <xsl:import
-    href="/usr/local/share/xsl/docbook/docbook/html/chunk.xsl"
-  /> 
-  -->
 
   <xsl:param name="use.id.as.filename" select="1"/>
+
+  <!-- Emit UTF-8 pages (chunk.xsl default is ISO-8859-1); avoids
+       mojibake when the web server serves the files without an
+       explicit charset and browsers assume UTF-8. -->
+  <xsl:param name="chunker.output.encoding" select="'UTF-8'"/>
 
   <xsl:variable name="arg.choice.opt.open.str" xml:space="preserve">?</xsl:variable>
   <xsl:variable name="arg.choice.opt.close.str">?</xsl:variable>

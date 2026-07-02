@@ -55,11 +55,14 @@ test mintest-1.1 {create an interpreter, load websh3 library} {} {
     if {$ok} {
 	puts "Using tclsh$tclsh to test loading of $env(WEB_LIBRARY)"
 	catch {set res [exec tclsh$tclsh $fna]}
-    } else {
-	error "No reasonable tclsh found"
     }
+    # clean up before a potential error throw, so no temp files are
+    # left behind in the current working directory
     file delete -force $fna
     file delete -force $fnb
+    if {!$ok} {
+	error "No reasonable tclsh found"
+    }
     set res
 } {invalid command name web::encrypt XDq3pUAU8b}
 

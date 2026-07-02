@@ -1,0 +1,396 @@
+#
+# webutils.test -- higher-level Tcl procs (webutils.tcl) and related C paths:
+#   web::response -flush, web::sseStart/sseSend, web::getContent,
+#   CONTENT_ENCODING charset extraction (raw path), multipart UTF-8,
+#   web::returnJson/returnText/returnBinary, web::randombytes,
+#   web::uuidV4, web::ts, web::mimeType, session lifecycle,
+#   JSON POST dispatch (cJSON cmdTag).
+#
+# Copyright (C) 2026 by Alexander Schoepe, Bochum, DE
+# All rights reserved.
+#
+# See the file "license.terms" for information on usage and
+# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+
+#------------------------------------------------------------------------------
+# tcltest package
+#------------------------------------------------------------------------------
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import ::tcltest::*
+}
+
+proc wuCleanParam {} {
+    web::cmdurlcfg -unset
+    web::formvar -unset
+    web::param -unset
+    web::request -unset
+}
+
+#------------------------------------------------------------------------------
+# web::response -flush (CGI path: Tcl_Flush + flushHandler == NULL)
+#------------------------------------------------------------------------------
+
+test webutils-flush-1.1 {web::response -flush is accepted and keeps content} {
+    web::response -select #wuFlushBuf
+    web::response -sendheader 0
+    web::put "abc"
+    web::response -flush
+    web::put "def"
+    web::response -flush
+    web::response -select stdout
+    set wuFlushBuf
+} {abcdef}
+
+#------------------------------------------------------------------------------
+# SSE: web::sseStart / web::sseSend
+#------------------------------------------------------------------------------
+
+test webutils-sse-1.1 {sseStart sets SSE headers} {
+    web::response -resetall
+    web::response -select #wuSseBuf1
+    web::response -sendheader 0
+    web::put ""
+    web::sseStart
+    set res [list [web::response -set Content-Type] \
+                  [web::response -set Cache-Control] \
+                  [web::response -set Connection]]
+    web::response -select stdout
+    web::response -resetall
+    set res
+} {text/event-stream no-cache keep-alive}
+
+test webutils-sse-1.2 {sseSend full frame: retry/id/event order, blank-line end} {
+    web::response -select #wuSseBuf2
+    web::response -sendheader 0
+    web::put ""
+    web::sseStart
+    web::sseSend "hello" myev 7 1500
+    web::response -select stdout
+    web::response -resetall
+    set wuSseBuf2
+} "retry: 1500\nid: 7\nevent: myev\ndata: hello\n\n"
+
+test webutils-sse-1.3 {sseSend splits multiline data into data: lines} {
+    web::response -select #wuSseBuf3
+    web::response -sendheader 0
+    web::put ""
+    web::sseStart
+    web::sseSend "l1\nl2\nl3"
+    web::response -select stdout
+    web::response -resetall
+    set wuSseBuf3
+} "data: l1\ndata: l2\ndata: l3\n\n"
+
+#------------------------------------------------------------------------------
+# CONTENT_ENCODING extraction from charset= (formdata.c rawReadPostData)
+#------------------------------------------------------------------------------
+
+test webutils-charset-1.1 {charset=utf-8 in Content-Type -> CONTENT_ENCODING utf-8} {
+    wuCleanParam
+    set data "abc"
+    web::dispatch -cmd "" -querystring "" -postdata #data end "application/json; charset=utf-8"
+    web::request CONTENT_ENCODING
+} {utf-8}
+
+test webutils-charset-1.2 {no charset -> CONTENT_ENCODING iso8859-1 (HTTP default)} {
+    wuCleanParam
+    set data "abc"
+    web::dispatch -cmd "" -querystring "" -postdata #data end "some/mime"
+    web::request CONTENT_ENCODING
+} {iso8859-1}
+
+#------------------------------------------------------------------------------
+# web::getContent: encoding resolution charset= -> (JSON: utf-8) ->
+# CONTENT_ENCODING -> utf-8 fallback
+#------------------------------------------------------------------------------
+
+test webutils-getcontent-1.1 {explicit charset=utf-8 decodes UTF-8 body} {
+    wuCleanParam
+    set ::env(CONTENT_TYPE) "application/json; charset=utf-8"
+    web::cgi::copyenv
+    unset ::env(CONTENT_TYPE)
+    set data "K\xc3\xa4se"
+    web::dispatch -cmd "" -querystring "" -postdata #data end "application/json; charset=utf-8"
+    list [web::getContent] [string length [web::getContent]]
+} "Käse 4"
+
+test webutils-getcontent-1.2 {explicit charset=iso-8859-1 decodes latin-1 body} {
+    wuCleanParam
+    set ::env(CONTENT_TYPE) "text/xml; charset=iso-8859-1"
+    web::cgi::copyenv
+    unset ::env(CONTENT_TYPE)
+    set data "K\xe4se"
+    web::dispatch -cmd "" -querystring "" -postdata #data end "text/xml; charset=iso-8859-1"
+    list [web::getContent] [string length [web::getContent]]
+} "Käse 4"
+
+test webutils-getcontent-1.3 {application/json without charset defaults to utf-8 (RFC 8259)} {
+    wuCleanParam
+    set ::env(CONTENT_TYPE) "application/json"
+    web::cgi::copyenv
+    unset ::env(CONTENT_TYPE)
+    set data "K\xc3\xa4se"
+    web::dispatch -cmd "" -querystring "" -postdata #data end "application/json"
+    list [web::getContent] [string length [web::getContent]]
+} "Käse 4"
+
+test webutils-getcontent-1.4 {+json suffix type without charset defaults to utf-8} {
+    wuCleanParam
+    set ::env(CONTENT_TYPE) "application/vnd.api+json"
+    web::cgi::copyenv
+    unset ::env(CONTENT_TYPE)
+    set data "K\xc3\xa4se"
+    web::dispatch -cmd "" -querystring "" -postdata #data end "application/vnd.api+json"
+    list [web::getContent] [string length [web::getContent]]
+} "Käse 4"
+
+test webutils-getcontent-1.5 {non-JSON without charset uses CONTENT_ENCODING iso8859-1} {
+    wuCleanParam
+    set ::env(CONTENT_TYPE) "some/mime"
+    web::cgi::copyenv
+    unset ::env(CONTENT_TYPE)
+    set data "K\xe4se"
+    web::dispatch -cmd "" -querystring "" -postdata #data end "some/mime"
+    web::getContent
+} "Käse"
+
+#------------------------------------------------------------------------------
+# multipart/form-data with UTF-8 body (formdata.c encoding restore fix)
+#------------------------------------------------------------------------------
+
+test webutils-multipart-1.1 {multipart field with UTF-8 bytes decodes to one char} {
+    wuCleanParam
+    set content "--xxxx\u0d
+Content-Disposition: form-data; name=\"k\"\u0d
+Content-Type: text/plain; charset=utf-8\u0d
+\u0d
+K\xc3\xa4se\u0d
+--xxxx--\u0d
+"
+    web::dispatch -cmd "" -querystring "" -postdata #content end "multipart/form-data; boundary=xxxx"
+    list [web::formvar k] [string length [web::formvar k]]
+} "Käse 4"
+
+#------------------------------------------------------------------------------
+# web::returnJson / returnText / returnBinary
+#------------------------------------------------------------------------------
+
+test webutils-return-1.1 {returnJson writes body and JSON headers} {
+    web::response -resetall
+    web::response -select #wuRetBuf1
+    web::response -sendheader 0
+    web::put ""
+    web::response -sendheader 1
+    web::returnJson {{"a":1}}
+    web::response -select stdout
+    web::response -resetall
+    set res {}
+    lappend res [string match "*Content-Type: application/json*" $wuRetBuf1]
+    lappend res [string match "*Content-Length: 7*" $wuRetBuf1]
+    lappend res [string match "*Cache-Control: no-cache, no-store, must-revalidate*" $wuRetBuf1]
+    lappend res [string match "*{\"a\":1}" $wuRetBuf1]
+} {1 1 1 1}
+
+test webutils-return-1.2 {returnText writes body, mime type and Content-Length} {
+    web::response -resetall
+    web::response -select #wuRetBuf2
+    web::response -sendheader 0
+    web::put ""
+    web::response -sendheader 1
+    web::returnText txt "Hallo"
+    web::response -select stdout
+    web::response -resetall
+    list [string match "*Content-Type: text/plain*" $wuRetBuf2] \
+         [string match "*Content-Length: 5*" $wuRetBuf2] \
+         [string match "*Hallo" $wuRetBuf2]
+} {1 1 1}
+
+test webutils-return-1.3 {returnBinary writes bytes and Content-Disposition} {
+    web::response -resetall
+    web::response -select #wuRetBuf3
+    web::response -sendheader 0
+    web::put ""
+    web::response -sendheader 1
+    web::returnBinary bin "\x00\x01\xff" /tmp/report.bin
+    web::response -select stdout
+    web::response -resetall
+    list [string match "*Content-Type: application/octet-stream*" $wuRetBuf3] \
+         [string match "*Content-Disposition: attachment; filename=report.bin*" $wuRetBuf3] \
+         [string match "*Content-Length: 3*" $wuRetBuf3]
+} {1 1 1}
+
+#------------------------------------------------------------------------------
+# web::randombytes / web::uuidV4 / web::ts / web::mimeType
+#------------------------------------------------------------------------------
+
+test webutils-random-1.1 {randombytes returns requested number of bytes} {
+    string length [web::randombytes 16]
+} {16}
+
+test webutils-random-1.2 {randombytes is not deterministic} {
+    expr {[web::randombytes 16] ne [web::randombytes 16]}
+} {1}
+
+test webutils-random-1.3 {randombytes names lists sources incl. default} {
+    set names [web::randombytes names]
+    list [expr {{default} in $names}] [expr {{urandom} in $names}]
+} {1 1}
+
+test webutils-uuid-1.1 {uuidV4 format: version 4, variant 10xx} {
+    regexp {^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$} [web::uuidV4]
+} {1}
+
+test webutils-uuid-1.2 {uuidV4 values differ} {
+    expr {[web::uuidV4] ne [web::uuidV4]}
+} {1}
+
+test webutils-ts-1.1 {ts formats milliseconds with .mmm suffix} {
+    regexp {^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.234$} [web::ts 1234]
+} {1}
+
+test webutils-ts-1.2 {ts without argument uses current time, correct shape} {
+    regexp {^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}$} [web::ts]
+} {1}
+
+test webutils-mime-1.1 {mimeType maps known extensions case-insensitively} {
+    list [web::mimeType json] [web::mimeType JSON] [web::mimeType pdf]
+} {application/json application/json application/pdf}
+
+test webutils-mime-1.2 {mimeType returns unknown token unchanged} {
+    web::mimeType text/x-custom
+} {text/x-custom}
+
+#------------------------------------------------------------------------------
+# Session lifecycle: configSetup / sessionSetup / New / Init / Refresh / Close
+# (exercises web::sessioncontextfactory via web::filecontext + filerandom idgen)
+#------------------------------------------------------------------------------
+
+test webutils-session-1.1 {full session lifecycle} {
+    set predest [web::logdest names]
+
+    set tmpdir [makeDirectory websh-sess]
+    web::configSetup
+    config::cset path $tmpdir
+    config::cset project webutilstest
+    web::loggingSetup *.-debug
+    web::sessionSetup
+
+    set res {}
+    set sid [web::sessionNew 60000 alice tester 120000]
+    lappend res [expr {$sid ne {}}]
+
+    # X-Session response header carries the JWT-style claims
+    lappend res [string match "*\"sub\":\"alice\"*" [web::response -set X-Session]]
+
+    set claims [web::sessionGet]
+    lappend res [dict get $claims sub] [dict get $claims aud] [dict get $claims mlt]
+
+    # re-init by explicit uuid
+    lappend res [web::sessionInit $sid]
+
+    # refresh bumps exp
+    set c2 [web::sessionRefresh 90000]
+    lappend res [expr {[dict get $c2 exp] > [dict get $c2 iat]}]
+
+    # close sets X-Status and blocks further init
+    web::sessionClose
+    lappend res [web::response -set X-Status]
+    lappend res [web::sessionInit $sid]
+
+    # cleanup: remove log destinations added by loggingSetup/sessionInit
+    foreach d [web::logdest names] {
+        if {$d ni $predest} { catch {web::logdest delete $d} }
+    }
+    removeDirectory websh-sess
+    web::response -resetall
+
+    set res
+} {1 1 alice tester 120000 true 1 sessionClosed false}
+
+test webutils-session-1.2 {sessionInit without bearer and without uuid fails} {
+    set predest [web::logdest names]
+    wuCleanParam
+    set res [web::sessionInit]
+    foreach d [web::logdest names] {
+        if {$d ni $predest} { catch {web::logdest delete $d} }
+    }
+    set res
+} {false}
+
+#------------------------------------------------------------------------------
+# JSON POST dispatch: cJSON cmdTag extraction (formdata.c) + error path
+#------------------------------------------------------------------------------
+
+web::command wuJsonCmd {
+    set ::wuJsonHit 1
+}
+
+test webutils-jsondispatch-1.1 {JSON body cmd tag dispatches to command} {
+    wuCleanParam
+    set ::env(CONTENT_TYPE) "application/json"
+    web::cgi::copyenv
+    unset ::env(CONTENT_TYPE)
+    set ::wuJsonHit 0
+    set data {{"cmd":"wuJsonCmd","x":1}}
+    web::dispatch -querystring "" -postdata #data end "application/json"
+    list $::wuJsonHit [web::request CONTENT_DATA]
+} {1 {{"cmd":"wuJsonCmd","x":1}}}
+
+test webutils-jsondispatch-1.2 {invalid JSON body does not crash, data preserved} {
+    wuCleanParam
+    set ::env(CONTENT_TYPE) "application/json"
+    web::cgi::copyenv
+    unset ::env(CONTENT_TYPE)
+    set data {this is not json}
+    catch {web::dispatch -cmd "" -querystring "" -postdata #data end "application/json"}
+    web::request CONTENT_DATA
+} {this is not json}
+
+#------------------------------------------------------------------------------
+# web::genPasswd (CSPRNG via web::randombytes, Fisher-Yates shuffle)
+#------------------------------------------------------------------------------
+
+test webutils-genpasswd-1.1 {default length 10, one char from each class, no ambiguous} {
+    web::genPasswd create wuGp1
+    set p [wuGp1 generate]
+    set res [list [string length $p] \
+                  [regexp {[a-km-z]} $p] \
+                  [regexp {[A-HJ-NP-Z]} $p] \
+                  [regexp {[1-9]} $p] \
+                  [regexp {[_+\-./!*?%&$]} $p] \
+                  [expr {![regexp {[lIO0]} $p]}]]
+    wuGp1 destroy
+    set res
+} {10 1 1 1 1 1}
+
+test webutils-genpasswd-1.2 {constructor length and configure len} {
+    web::genPasswd create wuGp2 16
+    set res [string length [wuGp2 generate]]
+    wuGp2 configure len 24
+    lappend res [string length [wuGp2 generate]] [wuGp2 configure len]
+    wuGp2 destroy
+    set res
+} {16 24 24}
+
+test webutils-genpasswd-1.3 {generated passwords differ} {
+    web::genPasswd create wuGp3
+    set res [expr {[wuGp3 generate] ne [wuGp3 generate]}]
+    wuGp3 destroy
+    set res
+} {1}
+
+test webutils-genpasswd-1.4 {configure rejects unknown keys and bad values} {
+    web::genPasswd create wuGp4
+    set res [list [catch {wuGp4 configure nosuch}] \
+                  [catch {wuGp4 configure len abc}] \
+                  [catch {wuGp4 configure len -1}]]
+    wuGp4 destroy
+    set res
+} {1 1 1}
+
+# cleanup
+wuCleanParam
+::tcltest::cleanupTests

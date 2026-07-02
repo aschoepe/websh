@@ -213,7 +213,14 @@ proc web::getContent {} {
     }
   }
   if {$enc eq ""} {
-    set enc [web::request CONTENT_ENCODING ""]
+    if {[string match -nocase {application/json*} $ct] || [string match -nocase {*+json*} $ct]} {
+      # JSON without charset parameter: RFC 8259 mandates UTF-8. Skip
+      # CONTENT_ENCODING here — the C layer fills it with the generic
+      # HTTP default iso8859-1, which would mangle UTF-8 JSON bodies.
+      set enc utf-8
+    } else {
+      set enc [web::request CONTENT_ENCODING ""]
+    }
   }
   if {$enc eq "" || $enc ni [encoding names]} {
     set enc utf-8
