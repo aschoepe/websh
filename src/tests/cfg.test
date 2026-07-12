@@ -91,6 +91,15 @@ test cfg-4.1 {default filepermissions} {
     web::config filepermissions
 } {0644}
 
+
+# Normalize [file attributes -permissions] across Tcl versions:
+# Tcl 8.6 returns 0644, Tcl 9 returns 0o644 -> always compare as 0644.
+proc cfgTestPerms {f} {
+    set p [file attributes $f -permissions]
+    if {[string match -nocase 0o* $p]} { set p [string range $p 2 end] }
+    return [format %04o [scan $p %o]]
+}
+
 test cfg-4.2 {change filepermissions} {
     set res [web::config filepermissions 0600]
     lappend res [web::config filepermissions 0604]
@@ -120,27 +129,27 @@ test cfg-4.3 {filecounter file permissions} {unixOnly} {
     web::config reset
     web::filecounter foo1 -filename foo.txt
     foo1 nextval
-    set res [file attributes foo.txt -permissions]
+    set res [cfgTestPerms foo.txt]
     file delete foo.txt
     web::filecounter foo2 -filename foo.txt -perms 0600
     foo2 nextval
-    lappend res [file attributes foo.txt -permissions]
+    lappend res [cfgTestPerms foo.txt]
     file delete foo.txt
     web::config filepermissions 0666
     web::filecounter foo3 -filename foo.txt
     foo3 nextval
-    lappend res [file attributes foo.txt -permissions]
+    lappend res [cfgTestPerms foo.txt]
     file delete foo.txt
     web::filecounter foo4 -filename foo.txt -perms 0604
     foo4 nextval
-    lappend res [file attributes foo.txt -permissions]
+    lappend res [cfgTestPerms foo.txt]
     file delete foo.txt
     web::filecounter foo5 -filename foo.txt -perms 0666
     foo5 nextval
-    lappend res [file attributes foo.txt -permissions]
+    lappend res [cfgTestPerms foo.txt]
     file delete foo.txt
     set res
-} {00644 00600 00666 00604 00666}
+} {0644 0600 0666 0604 0666}
 
 test cfg-4.4 {formdata file upload file permissions} {unixOnly} {
 
@@ -160,13 +169,13 @@ A small text file\u0d
 	web::request -reset
 	web::dispatch -querystring "" -cmd "" -postdata \#data end "multipart/form-data; boundary=xxxx"
 	set currfile [lindex [web::formvar file] 0]
-	lappend res [file attributes $currfile -permissions]
+	lappend res [cfgTestPerms $currfile]
 	lappend res [file size $currfile]
 	file delete -force $currfile
     }
     web::config reset
     set res
-} {00600 17 00602 17 00660 17 00640 17 00666 17 00400 17}
+} {0600 17 0602 17 0660 17 0640 17 0666 17 0400 17}
 
 test cfg-4.5 {session context file permissions} {unixOnly} {
 
@@ -177,13 +186,13 @@ test cfg-4.5 {session context file permissions} {unixOnly} {
 	${ctx}::new 111
 	${ctx}::cset a 1
 	${ctx}::commit
-	lappend res [file attributes 111 -permissions]
+	lappend res [cfgTestPerms 111]
 	file delete 111
     }
     web::config reset
     set res
 
-} {00644 00600 00640 00602 00666}
+} {0644 0600 0640 0602 0666}
 
 
 test cfg-4.6 {log file permissions} {unixOnly} {
@@ -191,13 +200,13 @@ test cfg-4.6 {log file permissions} {unixOnly} {
     foreach perm {0644 0600 0602 0660 0640 0666 0400} {
 	web::config filepermissions $perm
 	web::logdest add *.-debug file foo.log
-	lappend res [file attributes foo.log -permissions]
+	lappend res [cfgTestPerms foo.log]
 	web::logdest delete
 	file delete foo.log
     }
     web::config reset
     set res
-} {00644 00600 00602 00660 00640 00666 00400}
+} {0644 0600 0602 0660 0640 0666 0400}
 
 
 # cleanup
