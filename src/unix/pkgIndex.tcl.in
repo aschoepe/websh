@@ -1,2 +1,14 @@
-package ifneeded @PACKAGE_NAME@ @PACKAGE_VERSION@ [list load [file join \
-        $dir lib@PACKAGE_NAME@@PACKAGE_VERSION@[info sharedlibextension]]]
+# -*- tcl -*-
+# Tcl package index file
+#
+# Both library flavours may coexist in one directory: TEA names the
+# library libtcl9<pkg>... when built against Tcl 9 and lib<pkg>...
+# when built against Tcl 8.6.
+#
+if {[package vsatisfies [package provide Tcl] 9.0-]} {
+    package ifneeded @PACKAGE_NAME@ @PACKAGE_VERSION@ \
+	    [list load [file join $dir libtcl9@PACKAGE_NAME@@PACKAGE_VERSION@[info sharedlibextension]] [string totitle @PACKAGE_NAME@]]
+} else {
+    package ifneeded @PACKAGE_NAME@ @PACKAGE_VERSION@ \
+	    [list load [file join $dir lib@PACKAGE_NAME@@PACKAGE_VERSION@[info sharedlibextension]] [string totitle @PACKAGE_NAME@]]
+}

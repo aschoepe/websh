@@ -350,12 +350,12 @@ install-binaries: install-dirs binaries
 	rm -f $(bindir)/websh
 	ln -sf websh$(VERSION) $(bindir)/websh
 	mkdir -p $(pkgdir)
-	cp -f libwebsh$(SHARED_LIB_SUFFIX) $(pkgdir)
+	cp -f $(web_LIB_FILE) $(pkgdir)
 	cp -f pkgIndex.tcl $(pkgdir)
-	rm -f $(libdir)/libwebsh$(SHARED_LIB_SUFFIX)
-	ln -sf websh$(VERSION)/libwebsh$(SHARED_LIB_SUFFIX) $(libdir)/libwebsh$(SHARED_LIB_SUFFIX)
+	rm -f $(libdir)/$(web_LIB_FILE)
+	ln -sf websh$(VERSION)/$(web_LIB_FILE) $(libdir)/$(web_LIB_FILE)
 	rm -f $(libdir)/libwebsh$(SHLIB_EXT)
-	ln -sf libwebsh$(SHARED_LIB_SUFFIX) $(libdir)/libwebsh$(SHLIB_EXT)
+	ln -sf $(web_LIB_FILE) $(libdir)/libwebsh$(SHLIB_EXT)
 	@$(LDCONFIG)
 
 # mod_websh (only when --enable-apache / Apache headers found)
@@ -364,8 +364,8 @@ install-libraries: install-dirs libraries
 	cp -f mod_websh$(VERSION).so $(moddir)
 	rm -f $(moddir)/mod_websh.so
 	ln -sf mod_websh$(VERSION).so $(moddir)/mod_websh.so
-	rm -f $(moddir)/libwebsh$(SHARED_LIB_SUFFIX)
-	ln -sf $(pkgdir)/libwebsh$(SHARED_LIB_SUFFIX) $(moddir)/libwebsh$(SHARED_LIB_SUFFIX)
+	rm -f $(moddir)/$(web_LIB_FILE)
+	ln -sf $(pkgdir)/$(web_LIB_FILE) $(moddir)/$(web_LIB_FILE)
 	@$(RESTART_APACHE)
 
 # documentation / sample mod_websh setup
