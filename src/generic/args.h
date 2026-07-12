@@ -25,16 +25,16 @@
 #define OPTION_TYPE_DASHDASH 2
 #define OPTION_TYPE_NUMBER 3
 
-int argIndexOfKey(int objc, Tcl_Obj * CONST objv[], char *key);
-int argIndexOfFirstOpt(int objc, Tcl_Obj * CONST objv[]);
-int argIndexOfNextKey(int objc, Tcl_Obj * CONST objv[], int previous);
-int argKeyExists(int objc, Tcl_Obj * CONST objv[], char *key);
-Tcl_Obj *argValueOfKey(int objc, Tcl_Obj * CONST objv[], char *key);
+int argIndexOfKey(int objc, Tcl_Obj * const objv[], char *key);
+int argIndexOfFirstOpt(int objc, Tcl_Obj * const objv[]);
+int argIndexOfNextKey(int objc, Tcl_Obj * const objv[], int previous);
+int argKeyExists(int objc, Tcl_Obj * const objv[], char *key);
+Tcl_Obj *argValueOfKey(int objc, Tcl_Obj * const objv[], char *key);
 int argPosParam(TCLCONST char *params[], char *key);
-int argIndexOfFirstOpt(int objc, Tcl_Obj * CONST objv[]);
-int argIndexOfFirstArg(int objc, Tcl_Obj * CONST objv[], 
+int argIndexOfFirstOpt(int objc, Tcl_Obj * const objv[]);
+int argIndexOfFirstArg(int objc, Tcl_Obj * const objv[], 
 		       TCLCONST char *params[], int *Nparams);
-int argHasOnlyAccepted(int objc, Tcl_Obj * CONST objv[], 
+int argHasOnlyAccepted(int objc, Tcl_Obj * const objv[], 
 		       TCLCONST char *params[], int scanc);
 int argOptionType(Tcl_Obj * in);
 

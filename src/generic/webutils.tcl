@@ -212,6 +212,11 @@ proc web::getContent {} {
       set enc [string tolower $cs]
     }
   }
+  if {$enc ne ""} {
+    # Normalize IANA charset names to Tcl encoding names: HTTP says
+    # iso-8859-1 / us-ascii / utf8, Tcl knows iso8859-1 / ascii / utf-8.
+    set enc [string map {iso-8859- iso8859- iso_8859- iso8859- us-ascii ascii utf8 utf-8 windows- cp macintosh macRoman} $enc]
+  }
   if {$enc eq ""} {
     if {[string match -nocase {application/json*} $ct] || [string match -nocase {*+json*} $ct]} {
       # JSON without charset parameter: RFC 8259 mandates UTF-8. Skip
@@ -224,6 +229,12 @@ proc web::getContent {} {
   }
   if {$enc eq "" || $enc ni [encoding names]} {
     set enc utf-8
+  }
+  if {[package vsatisfies [package provide Tcl] 9-]} {
+    # Tcl 9 defaults to the strict encoding profile and would throw on
+    # invalid bytes in foreign input; "replace" substitutes U+FFFD and
+    # matches the standards-conforming behaviour for decoding requests.
+    return [encoding convertfrom -profile replace $enc [web::request CONTENT_DATA]]
   }
   return [encoding convertfrom $enc [web::request CONTENT_DATA]]
 }

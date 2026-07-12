@@ -20,6 +20,7 @@
 #include "logtosyslog.h"
 #include "tcl.h"
 #include <stdio.h>
+#include <stdarg.h>
 
 
 /* ----------------------------------------------------------------------------
@@ -439,7 +440,7 @@ int destroyLogDest(void *dest, void *env)
  * Web_Log -- distribute a log message
  * ------------------------------------------------------------------------- */
 int Web_Log(ClientData clientData,
-	    Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+	    Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     LogData *logData;
@@ -469,7 +470,7 @@ int Web_Log(ClientData clientData,
  * Web_LogDest -- manage list of dests
  * ------------------------------------------------------------------------- */
 int Web_LogDest(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     LogData *logData = NULL;
@@ -651,7 +652,8 @@ int Web_LogDest(ClientData clientData,
 		WebFreeIfNotNull(format);
 		return TCL_ERROR;
 	    }
-	    Tcl_SetResult(interp, name, Tcl_Free);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(name, -1));
+	    Tcl_Free(name);
 	    return TCL_OK;
 	}
     case NAMES:{
@@ -771,7 +773,7 @@ int Web_LogDest(ClientData clientData,
  * Web_LogFilter -- manage list of filters
  * ------------------------------------------------------------------------- */
 int Web_LogFilter(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     LogData *logData;
@@ -848,7 +850,8 @@ int Web_LogFilter(ClientData clientData,
 		destroyLogLevel(logLevel, NULL);
 		return TCL_ERROR;
 	    }
-	    Tcl_SetResult(interp, name, Tcl_Free);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(name, -1));
+	    Tcl_Free(name);
 	    return TCL_OK;
 	    break;
 	}

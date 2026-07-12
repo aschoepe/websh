@@ -34,7 +34,7 @@ Tcl_Obj *paramListNamesAll(ParamList * hash);
 void destroyParamList(ParamList * hash);
 int paramGet(ParamList * paramList,
 	     Tcl_Interp * interp,
-	     int objc, Tcl_Obj * CONST objv[], int hasPrivate);
+	     int objc, Tcl_Obj * const objv[], int hasPrivate);
 
 int paramGetIndexFromObj(Tcl_Interp * interp,
 			 Tcl_Obj * obj,

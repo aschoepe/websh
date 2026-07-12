@@ -64,7 +64,7 @@ int destroyLogToFileData(Tcl_Interp * interp, LogToFileData * logToFileData)
  * constructor
  * ------------------------------------------------------------------------- */
 ClientData createLogToFile(Tcl_Interp * interp, ClientData clientData,
-			   int objc, Tcl_Obj * CONST objv[])
+			   int objc, Tcl_Obj * const objv[])
 {
 
     LogToFileData *logToFileData = NULL;

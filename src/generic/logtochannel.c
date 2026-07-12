@@ -67,7 +67,7 @@ int destroyLogToChannelData(Tcl_Interp * interp,
  * Called by "web::logbag add channel chName".
  * ------------------------------------------------------------------------- */
 ClientData createLogToChannel(Tcl_Interp * interp, ClientData clientData,
-			      int objc, Tcl_Obj * CONST objv[])
+			      int objc, Tcl_Obj * const objv[])
 {
 
     LogToChannelData *logToChannelData = NULL;

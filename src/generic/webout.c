@@ -21,6 +21,7 @@
 #include "hashutl.h"
 #include "request.h"
 #include "paramlist.h"		/* destroyParamList */
+#include "webtclcompat.h"
 
 
 /* ----------------------------------------------------------------------------
@@ -73,7 +74,7 @@ int webout_Init(Tcl_Interp * interp)
  * Web_Eval -- the web::putx command
  * ------------------------------------------------------------------------- */
 int Web_Eval(ClientData clientData,
-	     Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+	     Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
     ResponseObj *savedObj = NULL;
     ResponseObj *responseObj = NULL;
@@ -142,7 +143,7 @@ int Web_Eval(ClientData clientData,
  * Web_Puts -- the web::puts command
  * ------------------------------------------------------------------------- */
 int Web_Puts(ClientData clientData,
-	     Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+	     Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     ResponseObj *responseObj = NULL;
@@ -189,7 +190,7 @@ int Web_Puts(ClientData clientData,
  * Web_Response -- the web::output command (config of web::put and web::putx)
  * ------------------------------------------------------------------------- */
 int Web_Response(ClientData clientData, Tcl_Interp * interp,
-		 int objc, Tcl_Obj * CONST objv[])
+		 int objc, Tcl_Obj * const objv[])
 {
 
 
@@ -380,7 +381,7 @@ int Web_Response(ClientData clientData, Tcl_Interp * interp,
 			/* if length = 0 we reset
 			 * if equal to "default", take from HTTP_RESPONSE
 			 * otherwise take value */
-			int len;
+			Tcl_Size len;
 			char *response = Tcl_GetStringFromObj(objv[2], &len);
 			if (len == 0)
 			    responseObj->httpresponse = NULL;

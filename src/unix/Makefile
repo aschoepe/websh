@@ -321,7 +321,7 @@ websh$(VERSION).cov: tclAppInit.$(OBJEXT) $(web_LIB_FILE)
 clean:
 	-rm -f $(BINARIES)
 	-rm -f $(bin_BINARIES)
-	-rm -f websh[0-9]* libwebsh[0-9]*.so libwebsh[0-9]*.dylib mod_websh[0-9]*.so
+	-rm -f websh[0-9]* libwebsh[0-9]*.so libwebsh[0-9]*.dylib libtcl9websh* mod_websh[0-9]*.so
 	-rm -f *.o core *.core
 	-rm -f *.$(OBJEXT)
 	-rm -f *pure* .*pure*

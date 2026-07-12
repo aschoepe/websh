@@ -120,7 +120,7 @@ int destroyLogLevel(void *level, void *dum);
  * ------------------------------------------------------------------------- */
 typedef ClientData(LogPlugInConstructor) (Tcl_Interp * interp,
 					  ClientData clientData,
-					  int objc, Tcl_Obj * CONST objv[]);
+					  int objc, Tcl_Obj * const objv[]);
 typedef int (LogPlugInDestructor) (Tcl_Interp * interp,
 				   ClientData clientData);
 typedef int (LogPlugInHandler) (Tcl_Interp * interp,
@@ -186,13 +186,13 @@ void destroyLogData(ClientData clientData, Tcl_Interp * interp);
 int __declspec(dllexport) log_Init(Tcl_Interp * interp);
 
 int Web_Log(ClientData clientData,
-	    Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+	    Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_LogDest(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_LogFilter(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 
 /* ----------------------------------------------------------------------------

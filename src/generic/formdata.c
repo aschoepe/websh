@@ -22,6 +22,7 @@
 #include "macros.h"
 #include "varchannel.h"
 #include "cJSON.h"
+#include "webtclcompat.h"
 
 
 /* ----------------------------------------------------------------------------
@@ -436,6 +437,12 @@ int parseMultipartFormData(RequestData * requestData, Tcl_Interp * interp,
        original encoding so that multi-byte sequences (e.g. UTF-8) are decoded
        correctly when reading text form fields. */
     Tcl_SetChannelOption(interp, channel, "-encoding", Tcl_DStringValue(&encoding));
+#if TCL_MAJOR_VERSION > 8
+    /* Tcl 9 reads with the strict encoding profile by default and would
+       abort on arbitrary 8-bit bytes in multipart bodies; tcl8 restores
+       the tolerant Tcl 8.6 behaviour for request parsing. */
+    Tcl_SetChannelOption(interp, channel, "-profile", "tcl8");
+#endif
 
     paramListSet(requestData->request, "CONTENT_ENCODING", Tcl_NewStringObj(Tcl_DStringValue(&encoding), -1));
 
@@ -648,9 +655,9 @@ int mimeSplitIsBoundary(Tcl_Obj * cur, Tcl_Obj * prev,
 			const char *boundary, int *isLast)
 {
 
-    int bLen = 0;
-    int cLen = 0;
-    int pLen = 0;
+    Tcl_Size bLen = 0;
+    Tcl_Size cLen = 0;
+    Tcl_Size pLen = 0;
     char *line = NULL;
 
     if ((cur == NULL) || (boundary == NULL))
@@ -697,7 +704,7 @@ void mimeReadHeader(Tcl_Channel channel, Tcl_Obj * hdr)
     Tcl_Obj *tclo = NULL;
     int first = 0;
     char *cline = NULL;
-    int len = 0;
+    Tcl_Size len = 0;
 
     if ((channel == NULL) || (hdr == NULL))
 	return;
@@ -768,11 +775,27 @@ long readAndDumpBody(Tcl_Interp * interp, Tcl_Channel in,
 	return 0;
 
     /* --------------------------------------------------------------------------
+     * read the upload body byte-faithfully: iso8859-1 maps every byte to
+     * the character of the same value, so char counts equal byte counts
+     * and the binary re-write below reproduces the input exactly. With
+     * the surrounding utf-8 encoding, valid multi-byte sequences inside
+     * binary uploads would collapse (and Tcl 9's tcl8 profile would map
+     * 0x80-0x9F via cp1252 to chars > 0xFF, breaking the binary write).
+     * ----------------------------------------------------------------------- */
+    Tcl_DString bodyEnc;
+    Tcl_DStringInit(&bodyEnc);
+    Tcl_GetChannelOption(NULL, in, "-encoding", &bodyEnc);
+    Tcl_SetChannelOption(NULL, in, "-encoding", "iso8859-1");
+
+    /* --------------------------------------------------------------------------
      * open file
      * ----------------------------------------------------------------------- */
     if ((out = Tcl_OpenFileChannel(NULL, Tcl_GetString(tmpFileName),
-				   "w", filePermissions)) == NULL)
+				   "w", filePermissions)) == NULL) {
+	Tcl_SetChannelOption(NULL, in, "-encoding", Tcl_DStringValue(&bodyEnc));
+	Tcl_DStringFree(&bodyEnc);
 	return 0;
+    }
 
     /* --------------------------------------------------------------------------
      * switch output to "binary"
@@ -783,6 +806,8 @@ long readAndDumpBody(Tcl_Interp * interp, Tcl_Channel in,
 	LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__,
 		"web::dispatch (file upload)",
 		WEBLOG_INFO, "error setting translation to binary ", NULL);
+	Tcl_SetChannelOption(NULL, in, "-encoding", Tcl_DStringValue(&bodyEnc));
+	Tcl_DStringFree(&bodyEnc);
 	return 0;
     }
 
@@ -881,6 +906,9 @@ long readAndDumpBody(Tcl_Interp * interp, Tcl_Channel in,
     Tcl_Close(NULL, out);
 
     Tcl_DecrRefCount(prevline);
+
+    Tcl_SetChannelOption(NULL, in, "-encoding", Tcl_DStringValue(&bodyEnc));
+    Tcl_DStringFree(&bodyEnc);
 
     *bytesSkipped = (readBytes - writtenBytes);
 

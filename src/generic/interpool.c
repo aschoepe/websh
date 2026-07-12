@@ -619,7 +619,7 @@ Tcl_Interp *createMainInterp(websh_server_conf * conf)
     if (mainInterp == NULL)
 	return NULL;
 
-    if (Tcl_InitStubs(mainInterp,"8.2",0) == NULL) {
+    if (Tcl_InitStubs(mainInterp, "8.6-",0) == NULL) {
       Tcl_DeleteInterp(mainInterp);
       return NULL;
     }

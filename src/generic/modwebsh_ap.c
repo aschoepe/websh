@@ -18,12 +18,13 @@
 #include "mod_websh.h"
 #include "modwebsh.h"
 #include "interpool.h"
+#include "webtclcompat.h"
 
 /* -------------------------------------------------------------------------
  * Web_Initializer -- if request counter is 0, eval the code
  * ------------------------------------------------------------------------- */
 int Web_Initializer_AP(ClientData clientData,
-		    Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		    Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     WebInterp *webInterp = NULL;
@@ -78,7 +79,7 @@ int Web_Initializer_AP(ClientData clientData,
  * Web_Finalizer -- register the destructor (to be called when WebInterp dies)
  * ------------------------------------------------------------------------- */
 int Web_Finalizer_AP(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     WebInterp *webInterp = (WebInterp *) clientData;
@@ -105,7 +106,7 @@ int Web_Finalizer_AP(ClientData clientData,
 	}
 	else {
 
-	    int length = -1;
+	    Tcl_Size length = -1;
 	    int result = 0;
 
 	    /* add code to list */
@@ -127,13 +128,13 @@ int Web_Finalizer_AP(ClientData clientData,
  * Web_Finalize -- call registered finalizers, in turn
  * ------------------------------------------------------------------------- */
 int Web_Finalize_AP(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     WebInterp *webInterp = (WebInterp *) clientData;
 
     int res = TCL_OK;
-    int len = -1;
+    Tcl_Size len = -1;
     int i = 0;
     Tcl_Obj *tobj = NULL;
 
@@ -188,7 +189,7 @@ int Web_Finalize_AP(ClientData clientData,
  * Web_InterpCfg -- set WebInterp properties
  * ------------------------------------------------------------------------- */
 int Web_InterpCfg_AP(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     int index;
@@ -280,7 +281,7 @@ int Web_InterpCfg_AP(ClientData clientData,
  * Web_InterpClassCfg -- set WebInterpClass properties
  * ------------------------------------------------------------------------- */
 int Web_InterpClassCfg_AP(ClientData clientData,
-		       Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		       Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     Tcl_HashEntry *entry;
@@ -379,7 +380,7 @@ int Web_InterpClassCfg_AP(ClientData clientData,
  * Web_MainEval -- eval in main interp
  * ------------------------------------------------------------------------- */
 int Web_MainEval_AP(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     int res = 0;
@@ -458,7 +459,7 @@ int Web_MainEval_AP(ClientData clientData,
  * Web_ConfigPath -- (sub)command in pool interp (called from Web_Cfg)
  * ------------------------------------------------------------------------- */
 
-int Web_ConfigPath_AP(Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]) {
+int Web_ConfigPath_AP(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]) {
 
   /* these options should be in sync with the options in Web_Cfg
    * not the order or anything, but the actual text strings */
@@ -523,7 +524,7 @@ int Web_ConfigPath_AP(Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]) {
 
 int ModWebsh_Init_AP(Tcl_Interp * interp) {
 
-  if (Tcl_InitStubs(interp, "8.2", 0) != NULL)
+  if (Tcl_InitStubs(interp, "8.6-", 0) != NULL)
     return TCL_OK;
   return TCL_ERROR;
   

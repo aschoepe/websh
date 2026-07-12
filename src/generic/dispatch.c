@@ -53,7 +53,7 @@ void httpHeaderCmdTag(char *src, char *dst)
  * Web_Dispatch
  * ------------------------------------------------------------------------- */
 int Web_Dispatch(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     RequestData *requestData = NULL;

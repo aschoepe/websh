@@ -31,13 +31,13 @@ Tcl_Obj *decryptNcaD(Tcl_Obj * key, Tcl_Obj * in);
 int setKeyNcaD(Tcl_Obj * key, Tcl_Obj * in);
 
 int Web_EncryptD(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_DecryptD(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_CryptDcfg(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int crypt_fromcharD(char in);
 char crypt_tocharD(int in);

@@ -52,12 +52,12 @@ int lock_TclChannel(Tcl_Interp * interp, Tcl_Channel channel);
 int unlock_TclChannel(Tcl_Interp * interp, Tcl_Channel channel);
 
 int Web_LockChannel(ClientData clientData,
-		    Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		    Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_UnLockChannel(ClientData clientData,
-		      Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		      Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_TruncateFile(ClientData clientData,
-		     Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		     Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 #endif

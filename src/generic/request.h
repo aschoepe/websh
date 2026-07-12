@@ -120,26 +120,26 @@ int removeTempFiles(Tcl_Interp * interp, RequestData * requestData);
 int request_Init(Tcl_Interp * interp);
 
 int Web_Request(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 
 int Web_Param(ClientData clientData,
-	      Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+	      Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_FormVar(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_ParseQueryString(ClientData clientData,
 			 Tcl_Interp * interp,
-			 int objc, Tcl_Obj * CONST objv[]);
+			 int objc, Tcl_Obj * const objv[]);
 int parseQueryString(RequestData * requestData, Tcl_Interp * interp,
 		     Tcl_Obj * query_string);
 int Web_GetQueryStringFromUrl(ClientData clientData,
 			      Tcl_Interp * interp,
-			      int objc, Tcl_Obj * CONST objv[]);
+			      int objc, Tcl_Obj * const objv[]);
 
 int Web_ParseFormData(ClientData clientData,
-		      Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		      Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 int parseMultipartFormData(RequestData * requestData, Tcl_Interp * interp,
 			   char *channelName, char *content_type);
 int rawReadPostData(RequestData * requestData, Tcl_Interp * interp,
@@ -151,17 +151,17 @@ char *mimeGetParamFromContDisp(const char *contentDisp, const char *name);
 Tcl_Obj *tempFileName(Tcl_Interp * interp, RequestData * requestData,
 		      Tcl_Obj * path, Tcl_Obj * prefix);
 int Web_TempFile(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_Command(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 
 int Web_GetCommand(ClientData clientData,
-		   Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		   Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_Dispatch(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 /* ----------------------------------------------------------------------------
  * mime header for Content Disp

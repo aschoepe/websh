@@ -37,7 +37,8 @@ int __declspec(dllexport) Websh_Init(Tcl_Interp * interp)
     /* --------------------------------------------------------------------------
      * stubs
      * ----------------------------------------------------------------------- */
-    Tcl_InitStubs(interp, "8.2", 0);
+    if (Tcl_InitStubs(interp, "8.6-", 0) == NULL)
+	return TCL_ERROR;
 
     /* --------------------------------------------------------------------------
      * the encoding module (htmlify,uricode)
@@ -153,7 +154,8 @@ int __declspec(dllexport) ModWebsh_Init(Tcl_Interp * interp)
     /* ---------------------------------------------------------------------
      * stubs
      * --------------------------------------------------------------------- */
-    Tcl_InitStubs(interp, "8.2", 0);
+    if (Tcl_InitStubs(interp, "8.6-", 0) == NULL)
+	return TCL_ERROR;
 
     /* ---------------------------------------------------------------------
      * register Log Module in here

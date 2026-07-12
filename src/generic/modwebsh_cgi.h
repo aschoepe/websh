@@ -25,13 +25,13 @@ typedef struct
   Tcl_Obj* (*requestGetDefaultChannelName) (Tcl_Interp * interp);
   char* (*requestGetDefaultOutChannelName) (Tcl_Interp * interp);
   int (*requestFillRequestValues) (Tcl_Interp *interp, RequestData *requestData);
-  int (*Web_Initializer) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
-  int (*Web_Finalizer) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
-  int (*Web_Finalize) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
-  int (*Web_InterpCfg) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
-  int (*Web_InterpClassCfg) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
-  int (*Web_MainEval) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
-  int (*Web_ConfigPath) (Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+  int (*Web_Initializer) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+  int (*Web_Finalizer) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+  int (*Web_Finalize) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+  int (*Web_InterpCfg) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+  int (*Web_InterpClassCfg) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+  int (*Web_MainEval) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+  int (*Web_ConfigPath) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
   int (*ModWebsh_Init) (Tcl_Interp *interp);
 }
 ApFuncs;

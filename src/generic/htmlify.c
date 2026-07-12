@@ -19,6 +19,7 @@
 #include "webutl.h"
 #include "conv.h"
 #include "log.h"
+#include "webtclcompat.h"
 
 /* ----------------------------------------------------------------------------
  * htmlifyAppendNum
@@ -345,6 +346,8 @@ int webDeHtmlify(ConvData * convData, Tcl_Obj * in, Tcl_Obj * out)
 			       plainend - plainfirst + 1);
     }
 
+    (void) err;			/* counted by HANDLE_* macros, not reported */
+
     return TCL_OK;
 }
 
@@ -386,7 +389,7 @@ TCLCONST char *findHtmlCmtClose(TCLCONST char *utf)
 int removeHtmlComments(Tcl_Interp * interp, Tcl_Obj * in, Tcl_Obj * res)
 {
 
-    int len = 0;
+    Tcl_Size len = 0;
     TCLCONST char *utf = NULL;
     TCLCONST char *cmtopen = NULL;
     TCLCONST char *cmtclose = NULL;

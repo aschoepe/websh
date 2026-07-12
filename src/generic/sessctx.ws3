@@ -243,7 +243,12 @@ proc web::filecontext {ctxmgrname args} {
     proc ${ctxmgrname}::save {id} {
 	variable _perm
 	set filename [_getFileName $id]
-	set fh [open $filename {CREAT WRONLY} $_perm]
+	# _perm may be an octal string like 0644 (from web::config
+	# filepermissions or -perm); Tcl 9 would parse a leading zero as
+	# decimal, so convert explicitly with scan %o.
+	set p $_perm
+	if {[string match -nocase 0o* $p]} { set p [string range $p 2 end] }
+	set fh [open $filename {CREAT WRONLY} [scan $p %o]]
 	web::lockfile $fh
 
 	# now that we have the lock: truncate

@@ -21,7 +21,7 @@
  * Web_Initializer -- just eval the code
  * ------------------------------------------------------------------------- */
 int __declspec(dllexport) Web_Initializer(ClientData clientData,
-		    Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		    Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
     int res = 0;
 
@@ -56,7 +56,7 @@ int __declspec(dllexport) Web_Initializer(ClientData clientData,
  * Web_Finalizer -- just eval the code
  * ------------------------------------------------------------------------- */
 int __declspec(dllexport) Web_Finalizer(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     int res = 0;
@@ -81,7 +81,7 @@ int __declspec(dllexport) Web_Finalizer(ClientData clientData,
  * Web_Finalizer -- just return
  * ------------------------------------------------------------------------- */
 int __declspec(dllexport) Web_Finalize(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
     ApFuncs *apFuncs = Tcl_GetAssocData(interp, WEB_APFUNCS_ASSOC_DATA, NULL);
     if (apFuncs != NULL)
@@ -94,7 +94,7 @@ int __declspec(dllexport) Web_Finalize(ClientData clientData,
  * Web_InterpClassCfg -- just return
  * ------------------------------------------------------------------------- */
 int __declspec(dllexport) Web_InterpClassCfg(ClientData clientData,
-		       Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		       Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
     ApFuncs *apFuncs = Tcl_GetAssocData(interp, WEB_APFUNCS_ASSOC_DATA, NULL);
     if (apFuncs != NULL)
@@ -107,7 +107,7 @@ int __declspec(dllexport) Web_InterpClassCfg(ClientData clientData,
  * Web_InterpCfg -- just return
  * ------------------------------------------------------------------------- */
 int __declspec(dllexport) Web_InterpCfg(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
     ApFuncs *apFuncs = Tcl_GetAssocData(interp, WEB_APFUNCS_ASSOC_DATA, NULL);
     if (apFuncs != NULL)
@@ -120,7 +120,7 @@ int __declspec(dllexport) Web_InterpCfg(ClientData clientData,
  * Web_MainEval -- just return
  * ------------------------------------------------------------------------- */
 int __declspec(dllexport) Web_MainEval(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
     ApFuncs *apFuncs = Tcl_GetAssocData(interp, WEB_APFUNCS_ASSOC_DATA, NULL);
     if (apFuncs != NULL)
@@ -133,7 +133,7 @@ int __declspec(dllexport) Web_MainEval(ClientData clientData,
  * Web_ConfigPath -- (sub)command (called from Web_Cfg)
  * ------------------------------------------------------------------------- */
 
-int Web_ConfigPath(Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]) {
+int Web_ConfigPath(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]) {
 
   /* these options should be in sync with the options in Web_Cfg
    * not the order or anything, but the actual text strings */

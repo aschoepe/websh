@@ -42,10 +42,10 @@ void destroyCryptData(ClientData clientData, Tcl_Interp * interp);
 int crypt_Init(Tcl_Interp * interp);
 
 int Web_Encrypt(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_Decrypt(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 /* ----------------------------------------------------------------------------
  * C API

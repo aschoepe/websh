@@ -17,6 +17,7 @@
 #include <ctype.h>
 #include <stdio.h>		/* argdbg */
 #include <string.h>		/* strcmp */
+#include "webtclcompat.h"
 
 
 /* -- doc ---------------------------------------------------------------------
@@ -26,7 +27,7 @@
  * 3: key to search for
  * R: 0..objc-1 or -1 in case of error
  * ------------------------------------------------------------------------- */
-int argIndexOfKey(int objc, Tcl_Obj * CONST objv[], char *key)
+int argIndexOfKey(int objc, Tcl_Obj * const objv[], char *key)
 {
 
     int pos = 1;
@@ -61,7 +62,7 @@ int argOptionType(Tcl_Obj * in)
 {
 
     char *tmp = NULL;
-    int tmpLen = -1;
+    Tcl_Size tmpLen = -1;
 
     if (in == NULL)
 	return 0;
@@ -90,7 +91,7 @@ int argOptionType(Tcl_Obj * in)
  * argIndexOfNextKey -- search for next argument with "-"
  * returns index to next Key in objv, or objc
  * ------------------------------------------------------------------------- */
-int argIndexOfNextKey(int objc, Tcl_Obj * CONST objv[], int previous)
+int argIndexOfNextKey(int objc, Tcl_Obj * const objv[], int previous)
 {
 
     int pos = 0;
@@ -145,7 +146,7 @@ int argPosParam(TCLCONST char *params[], char *key)
 /* -- doc ---------------------------------------------------------------------
  * indexOfFirstOpt -- 
  * ------------------------------------------------------------------------- */
-int argIndexOfFirstOpt(int objc, Tcl_Obj * CONST objv[])
+int argIndexOfFirstOpt(int objc, Tcl_Obj * const objv[])
 {
 
     int pos = 1;
@@ -187,7 +188,7 @@ int argIndexOfFirstOpt(int objc, Tcl_Obj * CONST objv[])
  * R: 1..objc-1 or objc if only switches
  * note: assumes that first arg is command name
  * ------------------------------------------------------------------------- */
-int argIndexOfFirstArg(int objc, Tcl_Obj * CONST objv[],
+int argIndexOfFirstArg(int objc, Tcl_Obj * const objv[],
 		       TCLCONST char *params[], int *Nparams)
 {
 
@@ -262,7 +263,7 @@ int argIndexOfFirstArg(int objc, Tcl_Obj * CONST objv[],
  * 3: key to search for
  * R: TCL_OK if found, TCL_ERROR else
  * ------------------------------------------------------------------------- */
-int argKeyExists(int objc, Tcl_Obj * CONST objv[], char *key)
+int argKeyExists(int objc, Tcl_Obj * const objv[], char *key)
 {
 
     if (argIndexOfKey(objc, objv, key) == -1) {
@@ -280,7 +281,7 @@ int argKeyExists(int objc, Tcl_Obj * CONST objv[], char *key)
  * 3: key to search for
  * R: Tcl_Obj* if found, else NULL
  * ------------------------------------------------------------------------- */
-Tcl_Obj *argValueOfKey(int objc, Tcl_Obj * CONST objv[], char *key)
+Tcl_Obj *argValueOfKey(int objc, Tcl_Obj * const objv[], char *key)
 {
 
     int pos = 0;
@@ -302,7 +303,7 @@ Tcl_Obj *argValueOfKey(int objc, Tcl_Obj * CONST objv[], char *key)
  * (from 1 to min(objc,scanc)). If scanc == -1, scan up to objc.
  * returns 0 if ok, index of argument which is unknown, if found
  * ------------------------------------------------------------------------- */
-int argHasOnlyAccepted(int objc, Tcl_Obj * CONST objv[],
+int argHasOnlyAccepted(int objc, Tcl_Obj * const objv[],
 		       TCLCONST char *params[], int scanc)
 {
 
@@ -340,7 +341,7 @@ int argHasOnlyAccepted(int objc, Tcl_Obj * CONST objv[],
 /* -- doc ---------------------------------------------------------------------
  * argdbg - write args to file handle for debugging
  * ------------------------------------------------------------------------- */
-void argdbg(int objc, Tcl_Obj * CONST objv[], FILE * fh)
+void argdbg(int objc, Tcl_Obj * const objv[], FILE * fh)
 {
 
     int i = 0;

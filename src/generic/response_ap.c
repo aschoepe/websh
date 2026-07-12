@@ -24,6 +24,7 @@
 
 #ifdef APACHE2
 #include "apr_strings.h"
+#include "webtclcompat.h"
 #endif
 
 /* ----------------------------------------------------------------------------
@@ -91,7 +92,7 @@ int apHeaderHandler(Tcl_Interp * interp, ResponseObj * responseObj,
 	    if (key != NULL) {
 		headerList = (Tcl_Obj *) valueOfCurrent(&iterator);
 		if (headerList != NULL) {
-		    int lobjc = -1;
+		    Tcl_Size lobjc = -1;
 		    Tcl_Obj **lobjv = NULL;
 		    int i;
 		    if (Tcl_ListObjGetElements(interp, headerList,

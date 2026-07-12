@@ -48,6 +48,18 @@ int apchannelCloseProc(ClientData clientData, Tcl_Interp * interp)
 }
 
 /* ----------------------------------------------------------------------------
+ * close2 wrapper: full close only (no half-close support). Tcl 9 accepts
+ * only TCL_CHANNEL_VERSION_5 channel types with close2Proc; identical
+ * behaviour on Tcl 8.6.
+ * ------------------------------------------------------------------------- */
+int apchannelClose2Proc(ClientData clientData, Tcl_Interp * interp, int flags)
+{
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) == 0)
+	return apchannelCloseProc(clientData, interp);
+    return EINVAL;
+}
+
+/* ----------------------------------------------------------------------------
  * input from apache channel
  * ------------------------------------------------------------------------- */
 int apchannelInputProc(ClientData clientData,
@@ -115,8 +127,8 @@ int apchannelGetHandleProc(ClientData clientData, int direction,
  * ------------------------------------------------------------------------- */
 static Tcl_ChannelType apChannelType = {
     "file",			/* Type name. */
-    NULL,			/* Set blocking/nonblocking mode. */
-    apchannelCloseProc,		/* Close proc. */
+    TCL_CHANNEL_VERSION_5,	/* v5 channel type (required by Tcl 9). */
+    TCL_CLOSE2PROC,		/* Close proc: see close2Proc. */
     apchannelInputProc,		/* Input proc. */
     apchannelOutputProc,	/* Output proc. */
     NULL,			/* Seek proc. */
@@ -124,6 +136,13 @@ static Tcl_ChannelType apChannelType = {
     NULL,			/* Get option proc. */
     apchannelWatchProc,		/* Initialize notifier. */
     apchannelGetHandleProc,	/* Get OS handles out of channel. */
+    apchannelClose2Proc,	/* Close2 proc. */
+    NULL,			/* Set blocking/nonblocking mode. */
+    NULL,			/* Flush proc. */
+    NULL,			/* Handler proc. */
+    NULL,			/* Wide seek proc. */
+    NULL,			/* Thread action proc. */
+    NULL,			/* Truncate proc. */
 };
 
 /* ----------------------------------------------------------------------------

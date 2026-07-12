@@ -33,7 +33,7 @@ int destroyLogToCmdData(Tcl_Interp * interp, LogToCmdData * logToCmdData)
  * constructor
  * ------------------------------------------------------------------------- */
 ClientData createLogToCmd(Tcl_Interp * interp, ClientData clientData,
-			  int objc, Tcl_Obj * CONST objv[])
+			  int objc, Tcl_Obj * const objv[])
 {
 
     LogToCmdData *logToCmdData = NULL;

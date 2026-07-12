@@ -21,6 +21,7 @@
 #include "hashutl.h"
 #include "paramlist.h"		/* destroyParamList */
 #include "varchannel.h"
+#include "webtclcompat.h"
 
 /* ----------------------------------------------------------------------------
  * getChannel
@@ -376,7 +377,7 @@ int webout_eval_tag(Tcl_Interp * interp, ResponseObj * responseObj,
   int begin = 1;
   int firstScan = 1;
   int inside = 0;
-  int inLen = 0;
+  Tcl_Size inLen = 0;
   int res = 0;
 
   next = Tcl_GetStringFromObj(in, &inLen);
@@ -575,7 +576,7 @@ int objectHeaderHandler(Tcl_Interp * interp, ResponseObj * responseObj,
 		headerList = (Tcl_Obj *) valueOfCurrent(&iterator);
 		if (headerList != NULL) {
 
-		    int lobjc = -1;
+		    Tcl_Size lobjc = -1;
 		    Tcl_Obj **lobjv = NULL;
 		    int i;
 		    if (Tcl_ListObjGetElements(interp, headerList,

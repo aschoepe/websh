@@ -13,6 +13,7 @@
  * ------------------------------------------------------------------------- */
 #include <tcl.h>
 #include "checksum.h"
+#include "webtclcompat.h"
 
 unsigned short crc_lut[256] = {
     0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7,
@@ -56,7 +57,7 @@ unsigned short crcCalc(Tcl_Obj * in)
 {
 
     unsigned char *bytes = NULL;
-    int bytesLen = -1;
+    Tcl_Size bytesLen = -1;
     unsigned short word = 0;
     int i = 0;
     volatile unsigned char idx = 0;
@@ -64,13 +65,26 @@ unsigned short crcCalc(Tcl_Obj * in)
     if (in == NULL)
 	return 0;
 
-    bytes = Tcl_GetByteArrayFromObj(in, &bytesLen);
-    word = (1 | (1 << 8));
+    /* Historic CRC semantics: Tcl 8.6's Tcl_GetByteArrayFromObj
+     * silently truncated every character to its low byte. Tcl 9
+     * returns NULL for strings with chars > U+00FF instead, so we
+     * emulate the truncation explicitly by walking the characters.
+     * This keeps checksums bit-identical to all previously produced
+     * ciphertexts on both Tcl 8.6 and Tcl 9. */
+    {
+	const char *p = Tcl_GetStringFromObj(in, &bytesLen);
+	const char *end = p + bytesLen;
+	Tcl_UniChar ch = 0;
 
-    for (i = 0; i < bytesLen; i++) {
-	idx = (unsigned char) (bytes[i] ^ WEB_HIG_BYTE(word));
-	word = (crc_lut[idx]) ^ (WEB_LOW_BYTE(word) << 8);
+	word = (1 | (1 << 8));
+	while (p < end) {
+	    p += Tcl_UtfToUniChar(p, &ch);
+	    idx = (unsigned char) ((ch & 0xFF) ^ WEB_HIG_BYTE(word));
+	    word = (crc_lut[idx]) ^ (WEB_LOW_BYTE(word) << 8);
+	}
     }
+    (void) bytes;
+    (void) i;
 
     return word;
 }
@@ -117,7 +131,7 @@ unsigned short crcDeAsciify(Tcl_Obj * in)
     unsigned char lowByte = 0;
     unsigned char higByte = 0;
     char *str = NULL;
-    int len = 0;
+    Tcl_Size len = 0;
     unsigned short crc = 0;
 
     if (in == NULL)

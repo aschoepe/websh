@@ -283,7 +283,7 @@ void destroyRequestData(ClientData clientData, Tcl_Interp * interp)
  * Web_Param
  * ------------------------------------------------------------------------- */
 int Web_Param(ClientData clientData,
-	      Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+	      Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     RequestData *requestData = NULL;
@@ -302,7 +302,7 @@ int Web_Param(ClientData clientData,
  * Web_FormVar
  * ------------------------------------------------------------------------- */
 int Web_FormVar(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     RequestData *requestData = NULL;
@@ -326,7 +326,7 @@ int Web_FormVar(ClientData clientData,
  * note: or if you call web::tempfile -remove
  * ------------------------------------------------------------------------- */
 int Web_TempFile(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     Tcl_Obj *tclo = NULL;
@@ -462,7 +462,7 @@ Tcl_Obj *tempFileName(Tcl_Interp * interp, RequestData * requestData,
  * accessor to request object
  * ------------------------------------------------------------------------*/
 int Web_Request(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     static char *params[] = { "-reset", "-channel", NULL };

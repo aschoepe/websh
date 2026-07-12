@@ -44,7 +44,7 @@ int destroyLogToApData(Tcl_Interp * interp, LogToApData * logToApData)
  * Called by "web::logbag add channel chName".
  * ------------------------------------------------------------------------- */
 ClientData createLogToAp(Tcl_Interp * interp, ClientData clientData,
-			 int objc, Tcl_Obj * CONST objv[])
+			 int objc, Tcl_Obj * const objv[])
 {
 
     /* --------------------------------------------------------------------------

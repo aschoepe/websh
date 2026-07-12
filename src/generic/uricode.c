@@ -12,13 +12,14 @@
 #include "web.h"
 #include "stdlib.h"		/* strtol() */
 #include "conv.h"
+#include "webtclcompat.h"
 
 /* ----------------------------------------------------------------------------
  * Web_UriEncode -- convert string to standard URI format for querystring
  * Use Web_UriDecode to revert to plain text.
  * ------------------------------------------------------------------------- */
 int Web_UriEncode(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     Tcl_Obj *tclo = NULL;
@@ -49,7 +50,7 @@ int Web_UriEncode(ClientData clientData,
  * Web_UriDecode -- from URI-compliant querystring back to plain
  * ------------------------------------------------------------------------- */
 int Web_UriDecode(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     Tcl_Obj *res = NULL;
@@ -87,7 +88,7 @@ Tcl_Obj *uriEncode(Tcl_Obj * inString)
     Tcl_Obj *tclo;
     Tcl_UniChar unic;
     unsigned char *bytes;
-    int bytesLen = -1;
+    Tcl_Size bytesLen = -1;
 
     IfNullLogRetNull(NULL, inString, "uriEncode: got NULL as input.");
 
@@ -138,7 +139,7 @@ Tcl_Obj *uriEncode(Tcl_Obj * inString)
 Tcl_Obj *uriDecode(Tcl_Obj * in)
 {
 
-    int length;
+    Tcl_Size length;
     Tcl_Obj *res = NULL;
     TCLCONST char *utf = NULL;
     Tcl_UniChar unic;

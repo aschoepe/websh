@@ -168,7 +168,7 @@ int Web_Filecounter(ClientData clientData,
  * Creates a new filecounter
  * --------------------------------------------------------------------------*/
 int filecounter(ClientData clientData, Tcl_Interp * interp,
-		int objc, Tcl_Obj * CONST objv[])
+		int objc, Tcl_Obj * const objv[])
 {
 
     RequestData * requestData = (RequestData *) clientData;
@@ -291,8 +291,20 @@ SeqNoGenerator *createSeqNoGenerator(RequestData * requestData,
 	err++;
     if (mask == NULL)
        seqnogen->mask = requestData->filePermissions;
-    else if (Tcl_GetIntFromObj(NULL, mask, &(seqnogen->mask)) == TCL_ERROR)
-        err++;
+    else {
+	/* permissions are octal (like chmod); Tcl 9 no longer parses a
+	 * leading zero as octal, so parse explicitly with base 8 */
+	const char *permStr = Tcl_GetString(mask);
+	char *permEnd = NULL;
+	long permVal;
+	if (permStr[0] == '0' && (permStr[1] == 'o' || permStr[1] == 'O'))
+	    permStr += 2;
+	permVal = strtol(permStr, &permEnd, 8);
+	if (permEnd == permStr || *permEnd != '\0' || permVal < 0)
+	    err++;
+	else
+	    seqnogen->mask = (int) permVal;
+    }
     if (wrap == NULL)
        seqnogen->doWrap = WEB_FILECOUNTER_WRAP;
     else if (Tcl_GetBooleanFromObj(NULL, wrap, &(seqnogen->doWrap)) == TCL_ERROR)

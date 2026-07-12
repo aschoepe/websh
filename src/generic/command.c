@@ -20,7 +20,7 @@
  * Web_Command
  * ------------------------------------------------------------------------- */
 int Web_Command(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     RequestData *requestData = NULL;
@@ -79,7 +79,7 @@ int Web_Command(ClientData clientData,
  * Web_GetCommand
  * ------------------------------------------------------------------------- */
 int Web_GetCommand(ClientData clientData,
-		   Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		   Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     RequestData *requestData = NULL;

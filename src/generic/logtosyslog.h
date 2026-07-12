@@ -52,7 +52,7 @@ int destroyLogTosySlogData(Tcl_Interp * interp,
 			   LogToSyslogData * logToSyslogData);
 
 ClientData createLogToSyslog(Tcl_Interp * interp, ClientData clientData,
-			     int objc, Tcl_Obj * CONST objv[]);
+			     int objc, Tcl_Obj * const objv[]);
 int destroyLogToSyslog(Tcl_Interp * interp, ClientData clientData);
 int logToSyslog(Tcl_Interp * interp, ClientData clientData, char *msg);
 

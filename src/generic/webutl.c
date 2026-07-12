@@ -16,6 +16,7 @@
 #include <tcl.h>
 #include <string.h>		/* strlen */
 #include "webutl.h"
+#include "webtclcompat.h"
 
 /* ----------------------------------------------------------------------------
  * allocAndSet --
@@ -222,7 +223,7 @@ int handleConfig(Tcl_Interp * interp, Tcl_Obj ** tclo, Tcl_Obj * newValue,
 int tclGetListLength(Tcl_Interp * interp, Tcl_Obj * list)
 {
 
-    int tmp = -1;
+    Tcl_Size tmp = -1;
 
     if (Tcl_ListObjLength(interp, list, &tmp) == TCL_ERROR) {
 	LOG_MSG(interp, WRITE_LOG | SET_RESULT, __FILE__, __LINE__,

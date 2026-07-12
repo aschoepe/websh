@@ -112,12 +112,12 @@ int isDefaultResponseObj(Tcl_Interp * interp, char *name);
  * The websh3-Commands
  * ------------------------------------------------------------------------- */
 int Web_Puts(ClientData clientData,
-	     Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+	     Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_Response(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_Eval(ClientData clientData,
-	     Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+	     Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 #endif

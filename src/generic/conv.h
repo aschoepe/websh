@@ -64,15 +64,15 @@ void destroyConvData(ClientData clientData, Tcl_Interp * interp);
 int conv_Init(Tcl_Interp * interp);
 
 int Web_Htmlify(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_UriEncode(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 int Web_UriDecode(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_DeHtmlify(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 void htmlifyAppendNum(Tcl_Obj * tclo, int num);
 
@@ -93,6 +93,6 @@ int convertHtmlEntities(ConvData * convData, Tcl_Obj * in, Tcl_Obj * res);
 Tcl_UniChar getNumericEntity(Tcl_UniChar ** str, int len);
 int Web_Html_RemoveComments(ClientData clientData,
 			    Tcl_Interp * interp,
-			    int objc, Tcl_Obj * CONST objv[]);
+			    int objc, Tcl_Obj * const objv[]);
 
 #endif

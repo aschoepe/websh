@@ -22,42 +22,42 @@
 /* declarations for command registration */
 
 int __declspec(dllexport) Web_Initializer(ClientData clientData,
-		    Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		    Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int __declspec(dllexport) Web_Finalizer(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int __declspec(dllexport) Web_Finalize(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int __declspec(dllexport) Web_MainEval(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int __declspec(dllexport) Web_InterpCfg(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int __declspec(dllexport) Web_InterpClassCfg(ClientData clientData,
-		       Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		       Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 /* declarations for local (mod_websh) implementation */
 
 int Web_Initializer_AP(ClientData clientData,
-		    Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		    Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_Finalizer_AP(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_Finalize_AP(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_MainEval_AP(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_InterpCfg_AP(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_InterpClassCfg_AP(ClientData clientData,
-		       Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		       Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 ResponseObj* createDefaultResponseObj_AP(Tcl_Interp * interp);
 
@@ -69,7 +69,7 @@ char* requestGetDefaultOutChannelName_AP(Tcl_Interp * interp);
 
 int requestFillRequestValues_AP(Tcl_Interp *interp, RequestData *requestData);
 
-int Web_ConfigPath_AP(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+int Web_ConfigPath_AP(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 int ModWebsh_Init_AP(Tcl_Interp *interp);
 

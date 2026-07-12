@@ -81,9 +81,9 @@ void destroyUrlData(ClientData clientData, Tcl_Interp * interp);
 
 int url_Init(Tcl_Interp * interp);
 int Web_CmdUrlCfg(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 int Web_CmdUrl(ClientData clientData,
-	       Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+	       Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 Tcl_Obj *createQueryList(Tcl_Interp * interpm, Tcl_Obj * cmd, Tcl_Obj * plist,
 			 UrlData * urlData, int flag);
 

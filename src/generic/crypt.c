@@ -18,6 +18,7 @@
 #include "log.h"
 #include "macros.h"
 #include "nca_d.h"
+#include "webtclcompat.h"
 
 /* ----------------------------------------------------------------------------
  * init
@@ -113,7 +114,7 @@ void destroyCryptData(ClientData clientData, Tcl_Interp * interp)
  * Web_Encrypt -- in: list, out: str
  * ------------------------------------------------------------------------*/
 int Web_Encrypt(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     WebAssertObjc(objc != 2, 1, "string");
@@ -127,7 +128,7 @@ int Web_Encrypt(ClientData clientData,
  * Web_Decrypt
  * ------------------------------------------------------------------------*/
 int Web_Decrypt(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     /* ------------------------------------------------------------------------
@@ -147,7 +148,7 @@ int doencrypt(Tcl_Interp * interp, Tcl_Obj * in, int internal)
 {
 
     CryptData *cryptData = NULL;
-    int lobjc = -1;
+    Tcl_Size lobjc = -1;
     Tcl_Obj **lobjv = NULL;
     int i = -1;
 
@@ -245,7 +246,7 @@ int dodecrypt(Tcl_Interp * interp, Tcl_Obj * in, int internal)
 {
 
     CryptData *cryptData = NULL;
-    int lobjc = -1;
+    Tcl_Size lobjc = -1;
     Tcl_Obj **lobjv = NULL;
     int i = -1;
 

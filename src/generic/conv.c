@@ -69,7 +69,7 @@ int conv_Init(Tcl_Interp * interp)
  * Web_Htmlify -- convert string from ISO-8859-1 to HTML
  * ------------------------------------------------------------------------- */
 int Web_Htmlify(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     ConvData *convData = NULL;
@@ -159,7 +159,7 @@ int Web_Htmlify(ClientData clientData,
  *   convert string from HTML to ISO-8859-1
  * ------------------------------------------------------------------------- */
 int Web_DeHtmlify(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     ConvData *convData = NULL;
@@ -198,7 +198,7 @@ int Web_DeHtmlify(ClientData clientData,
  * ------------------------------------------------------------------------- */
 int Web_Html_RemoveComments(ClientData clientData,
 			    Tcl_Interp * interp,
-			    int objc, Tcl_Obj * CONST objv[])
+			    int objc, Tcl_Obj * const objv[])
 {
 
     Tcl_Obj *res = NULL;

@@ -30,6 +30,7 @@
 #include "webutl.h"
 #include <sys/types.h>
 #include "macros.h"
+#include "webtclcompat.h"
 
 static char *severityName[] = { "none",
     "alert",
@@ -417,7 +418,7 @@ Tcl_Obj *formatMessage(LogLevel * level, char *fmt,
     char tmpStr[32] = "no pid";
     char *c;
     Tcl_Obj *fmsg = NULL;
-    int len = 0;
+    Tcl_Size len = 0;
     char *cmsg = NULL;
     int usec = 0, msec = 0;
 

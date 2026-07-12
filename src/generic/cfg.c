@@ -114,7 +114,7 @@ void destroyCfgData(ClientData clientData, Tcl_Interp * interp)
  * Web_Cfg -- access internal data from cfg
  * ------------------------------------------------------------------------- */
 int Web_Cfg(ClientData clientData, Tcl_Interp * interp,
-	    int objc, Tcl_Obj * CONST objv[])
+	    int objc, Tcl_Obj * const objv[])
 {
 
     /* keep consistent with enum PutxMarkup in request.h */
@@ -255,16 +255,26 @@ int Web_Cfg(ClientData clientData, Tcl_Interp * interp,
 		return TCL_OK;
 	      case 3:
 		/* ------------------------------------------------------------
-		 * only accept integers
+		 * permissions are octal (like chmod). Parse explicitly with
+		 * base 8: Tcl 9 no longer treats a leading zero as octal,
+		 * so Tcl_GetIntFromObj would read "0600" as decimal 600.
+		 * Accept an optional 0o prefix (Tcl 9 octal literal).
 		 * --------------------------------------------------------- */
-		if (Tcl_GetIntFromObj(interp, objv[2], &tmpInt) ==
-		    TCL_ERROR) {
-		    LOG_MSG(interp, WRITE_LOG | SET_RESULT, __FILE__,
-			    __LINE__, "web::config filepermissions",
-			    WEBLOG_ERROR,
-			    "web::config filepermissions only accepts integers but ",
-			    "got \"", Tcl_GetString(objv[2]), "\"", NULL);
-		    return TCL_ERROR;
+		{
+		    const char *permStr = Tcl_GetString(objv[2]);
+		    char *permEnd = NULL;
+		    if (permStr[0] == '0' &&
+			(permStr[1] == 'o' || permStr[1] == 'O'))
+			permStr += 2;
+		    tmpInt = (int) strtol(permStr, &permEnd, 8);
+		    if (permEnd == permStr || *permEnd != '\0' || tmpInt < 0) {
+			LOG_MSG(interp, WRITE_LOG | SET_RESULT, __FILE__,
+				__LINE__, "web::config filepermissions",
+				WEBLOG_ERROR,
+				"web::config filepermissions only accepts octal permissions but ",
+				"got \"", Tcl_GetString(objv[2]), "\"", NULL);
+			return TCL_ERROR;
+		    }
 		}
 		cfgData->requestData->filePermissions = tmpInt;
 		return TCL_OK;

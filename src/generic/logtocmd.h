@@ -51,7 +51,7 @@ typedef char *LogToCmdData;
 int destroyLogToCmdData(Tcl_Interp * interp, LogToCmdData * logToCmdData);
 
 ClientData createLogToCmd(Tcl_Interp * interp, ClientData clientData,
-			  int objc, Tcl_Obj * CONST objv[]);
+			  int objc, Tcl_Obj * const objv[]);
 int destroyLogToCmd(Tcl_Interp * interp, ClientData clientData);
 int logToCmd(Tcl_Interp * interp, ClientData clientData, char *msg);
 

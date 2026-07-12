@@ -17,6 +17,7 @@
 #include "nca_d.h"
 #include "checksum.h"
 #include "webutl.h"
+#include "webtclcompat.h"
 
 
 /* ----------------------------------------------------------------------------
@@ -94,7 +95,7 @@ void destroyNcaD(ClientData clientData, Tcl_Interp * interp)
  * Web_CryptDcfg
  * ------------------------------------------------------------------------- */
 int Web_CryptDcfg(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     /* --------------------------------------------------------------------------
@@ -117,7 +118,7 @@ int Web_CryptDcfg(ClientData clientData,
  * Web_EncryptD
  * ------------------------------------------------------------------------- */
 int Web_EncryptD(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     Tcl_Obj *out = NULL;
@@ -171,13 +172,13 @@ int Web_EncryptD(ClientData clientData,
  * Web_DecryptD
  * ------------------------------------------------------------------------- */
 int Web_DecryptD(ClientData clientData,
-		 Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		 Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     Tcl_Obj *key = NULL;
-    int keyLen = -1;
+    Tcl_Size keyLen = -1;
     char *str = NULL;
-    int strLen = -1;
+    Tcl_Size strLen = -1;
     Tcl_Obj *out = NULL;
     Tcl_Obj *tmp = NULL;
 
@@ -267,11 +268,11 @@ Tcl_Obj *encryptNcaD(Tcl_Interp * interp, ClientData clientData, Tcl_Obj * in)
     int pack, type, prev = 0, newc, pos = 0;
     Tcl_Obj *key;
     unsigned char *keyBytes;
-    int keyLen = -1;
+    Tcl_Size keyLen = -1;
     char outc;
     int i;
     char *str;
-    int strLen = -1;
+    Tcl_Size strLen = -1;
 
     if ((clientData == NULL) || (in == NULL))
 	return NULL;
@@ -334,9 +335,9 @@ Tcl_Obj *decryptNcaD(Tcl_Obj * key, Tcl_Obj * in)
 {
 
     char *str = NULL;
-    int strLen = -1;
+    Tcl_Size strLen = -1;
     unsigned char *keyBytes = NULL;
-    int keyLen = -1;
+    Tcl_Size keyLen = -1;
 
     int pack = 0, type = 0, prev = 0, newc = 0, pos = 0;
     int i;
@@ -355,36 +356,46 @@ Tcl_Obj *decryptNcaD(Tcl_Obj * key, Tcl_Obj * in)
     keyBytes = Tcl_GetByteArrayFromObj(key, &keyLen);
     str = Tcl_GetStringFromObj(in, &strLen);
 
-    out = Tcl_NewObj();
-    Tcl_IncrRefCount(out);
+    /* Decrypted output is the UTF-8 byte stream of the original
+     * message. Collect the bytes in a DString and create the string
+     * object in one go: Tcl 9 validates UTF-8 on append, so appending
+     * partial multi-byte sequences byte-by-byte would corrupt them. */
+    {
+	Tcl_DString ds;
+	Tcl_DStringInit(&ds);
 
-    for (i = 2; i < strLen; i++) {
+	for (i = 2; i < strLen; i++) {
 
-	pack = crypt_fromcharD(str[i]);
-
-	/* back rotation according to keyBytes */
-	newc = (620 + pack - (int) keyBytes[pos++] - prev) % 62;
-	pos %= keyLen;
-
-	prev = pack;
-
-	if (newc > 57) {
-
-	    type = newc - 57;
-
-	    i++;
 	    pack = crypt_fromcharD(str[i]);
 
 	    /* back rotation according to keyBytes */
 	    newc = (620 + pack - (int) keyBytes[pos++] - prev) % 62;
 	    pos %= keyLen;
-	    prev = pack;
-	}
-	else
-	    type = 0;
 
-	outc = (char) crypt_unpackD((type * 256) + newc);
-	Tcl_AppendToObj(out, &outc, 1);
+	    prev = pack;
+
+	    if (newc > 57) {
+
+		type = newc - 57;
+
+		i++;
+		pack = crypt_fromcharD(str[i]);
+
+		/* back rotation according to keyBytes */
+		newc = (620 + pack - (int) keyBytes[pos++] - prev) % 62;
+		pos %= keyLen;
+		prev = pack;
+	    }
+	    else
+		type = 0;
+
+	    outc = (char) crypt_unpackD((type * 256) + newc);
+	    Tcl_DStringAppend(&ds, &outc, 1);
+	}
+
+	out = Tcl_NewStringObj(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+	Tcl_IncrRefCount(out);
+	Tcl_DStringFree(&ds);
     }
 
     return out;
@@ -404,7 +415,7 @@ int setKeyNcaD(Tcl_Obj * key, Tcl_Obj * in)
 	0x4f, 0xcc, 0xa9, 0x7b, 0x1f, 0x33, 0xc8, 0x0b, 0x89, 0x30
     };
     unsigned char *inBytes = NULL;
-    int inLen = -1;
+    Tcl_Size inLen = -1;
 
     if (key == NULL)
 	return TCL_ERROR;

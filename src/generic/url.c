@@ -21,6 +21,7 @@
 #include "stdlib.h"		/* getenv */
 #include "log.h"
 #include "request.h"
+#include "webtclcompat.h"
 
 
 
@@ -199,7 +200,7 @@ void destroyUrlData(ClientData clientData, Tcl_Interp * interp)
 int parseUrlFormat(Tcl_Interp * interp, Tcl_Obj * list)
 {
 
-    int objc = -1;
+    Tcl_Size objc = -1;
     Tcl_Obj **objv = NULL;
     int i = -1;
     int res = 0;
@@ -478,7 +479,7 @@ Tcl_Obj *createQueryList(Tcl_Interp * interp, Tcl_Obj * cmd, Tcl_Obj * plist,
  * Web_CmdUrl -- url generation
  * ------------------------------------------------------------------------- */
 int Web_CmdUrl(ClientData clientData,
-	       Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+	       Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     static TCLCONST char *params[] = { "-urlformat",
@@ -839,7 +840,7 @@ int Web_CmdUrl(ClientData clientData,
  *        time:       t
  * ------------------------------------------------------------------------- */
 int Web_CmdUrlCfg(ClientData clientData,
-		  Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     UrlData *urlData = NULL;

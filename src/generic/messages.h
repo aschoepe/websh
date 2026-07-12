@@ -55,11 +55,11 @@ int receive_msg(Tcl_Channel f, int *command, int *flags, int *size,
 		void **data);
 
 int Web_Send(ClientData clientData,
-	     Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+	     Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 int Web_Recv(ClientData clientData,
-	     Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+	     Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 int Web_MsgFlag(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int messages_Init(Tcl_Interp * interp);
 int parseFlags(Tcl_Interp * interp, char *flaglist, int *flags);

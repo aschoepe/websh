@@ -198,7 +198,7 @@ int unlock_TclChannel(Tcl_Interp * interp, Tcl_Channel channel)
  * Channel locking
  * ------------------------------------------------------------------------*/
 int Web_LockChannel(ClientData clientData,
-		    Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		    Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     Tcl_Channel channel;
@@ -214,7 +214,7 @@ int Web_LockChannel(ClientData clientData,
  * Channel unlocking
  * ------------------------------------------------------------------------*/
 int Web_UnLockChannel(ClientData clientData,
-		      Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		      Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     Tcl_Channel channel;
@@ -230,7 +230,7 @@ int Web_UnLockChannel(ClientData clientData,
  * web::filetruncate
  * ------------------------------------------------------------------------- */
 int Web_TruncateFile(ClientData clientData,
-		     Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		     Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     Tcl_Channel channel;

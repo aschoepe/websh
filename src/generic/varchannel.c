@@ -23,6 +23,7 @@
 #include <tcl.h>
 #include "varchannel.h"
 #include "webout.h"		/* belongs to output module of websh */
+#include "webtclcompat.h"
 
 /* ----------------------------------------------------------------------------
  * close var channel
@@ -38,6 +39,18 @@ int varchannelCloseProc(ClientData clientData, Tcl_Interp * interp)
 }
 
 /* ----------------------------------------------------------------------------
+ * close2 wrapper: full close only (no half-close support). Tcl 9 accepts
+ * only TCL_CHANNEL_VERSION_5 channel types with close2Proc; identical
+ * behaviour on Tcl 8.6.
+ * ------------------------------------------------------------------------- */
+int varchannelClose2Proc(ClientData clientData, Tcl_Interp * interp, int flags)
+{
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) == 0)
+	return varchannelCloseProc(clientData, interp);
+    return EINVAL;
+}
+
+/* ----------------------------------------------------------------------------
  * input from var channel
  * ------------------------------------------------------------------------- */
 int varchannelInputProc(ClientData clientData,
@@ -45,7 +58,7 @@ int varchannelInputProc(ClientData clientData,
 {
 
     char *str = NULL;
-    int strLen = 0;
+    Tcl_Size strLen = 0;
     int remains = 0;
     VarChannel *varChannel = NULL;
     int isNew = 0;
@@ -70,6 +83,14 @@ int varchannelInputProc(ClientData clientData,
 
     /* str = Tcl_GetStringFromObj(var,&strLen); */
     str = (char *) Tcl_GetByteArrayFromObj(var, &strLen);
+    if (str == NULL) {
+	/* Tcl 9: variable holds characters > U+00FF and cannot be
+	 * interpreted as a byte array (Tcl 8.6 converted silently) */
+	if (isNew)
+	    Tcl_DecrRefCount(var);
+	*errorCodePtr = EILSEQ;
+	return -1;
+    }
 
     if (varChannel->readCursor < strLen) {
 
@@ -107,7 +128,7 @@ int varchannelOutputProc(ClientData clientData,
     int res = -1;
     int destLen = 0;
     char *dest = NULL;
-    int bytesConv = 0;
+    int bytesConv = 0;		/* Tcl_ExternalToUtf dstWrotePtr is int* in Tcl 9 too */
     Tcl_Obj *tmp = NULL;
     int isNew = 0;
     Tcl_Obj *var = NULL;
@@ -146,8 +167,16 @@ int varchannelOutputProc(ClientData clientData,
     if (dest == NULL)
 	return -1;
 
+#ifdef TCL_ENCODING_PROFILE_TCL8
+    /* Tcl 9 defaults to the strict profile and would reject arbitrary
+     * binary bytes (e.g. from a channel in -translation binary). */
+    res = Tcl_ExternalToUtf(NULL, NULL, buf, toWrite,
+			    TCL_ENCODING_PROFILE_TCL8, NULL, dest, destLen,
+			    NULL, &bytesConv, NULL);
+#else
     res = Tcl_ExternalToUtf(NULL, NULL, buf, toWrite, 0, NULL, dest, destLen,
 			    NULL, &bytesConv, NULL);
+#endif
 
     if (res != TCL_OK) {
 
@@ -208,8 +237,8 @@ int varchannelGetHandleProc(ClientData clientData, int direction,
  * ------------------------------------------------------------------------- */
 static Tcl_ChannelType varchannelType = {
     "varchannel",		/* Type name. */
-    NULL,			/* Set blocking/nonblocking mode. */
-    varchannelCloseProc,	/* Close proc. */
+    TCL_CHANNEL_VERSION_5,	/* v5 channel type (required by Tcl 9). */
+    TCL_CLOSE2PROC,		/* Close proc: see close2Proc. */
     varchannelInputProc,	/* Input proc. */
     varchannelOutputProc,	/* Output proc. */
     NULL,			/* Seek proc. */
@@ -217,6 +246,13 @@ static Tcl_ChannelType varchannelType = {
     NULL,			/* Get option proc. */
     varchannelWatchProc,	/* Initialize notifier. */
     varchannelGetHandleProc,	/* Get OS handles out of channel. */
+    varchannelClose2Proc,	/* Close2 proc. */
+    NULL,			/* Set blocking/nonblocking mode. */
+    NULL,			/* Flush proc. */
+    NULL,			/* Handler proc. */
+    NULL,			/* Wide seek proc. */
+    NULL,			/* Thread action proc. */
+    NULL,			/* Truncate proc. */
 };
 
 /* ----------------------------------------------------------------------------

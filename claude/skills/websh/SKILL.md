@@ -82,6 +82,55 @@ web::command default { web::put "Hello" }
 web::dispatch
 ```
 
+#### ⚠️ Binary multipart uploads silently truncated
+
+When parsing `multipart/form-data`, `web::dispatch` sets the input channel
+to `-translation binary` (see `formdata.c`) but **does not** set
+`-encoding binary`. The channel therefore reads file bytes through the
+system encoding (utf-8 on macOS/Debian). Invalid utf-8 byte sequences in
+binary files (xlsx, pdf, zip, jpeg, /dev/urandom, …) are silently replaced
+with `U+FFFD` (replacement char) or lost — the saved file is shorter than
+the upload, and the `truncated` element of `web::formvar` (lindex 2)
+**does not** flag the loss (it stays at 0 or marginally negative, derived
+from `readBytes - writtenBytes`).
+
+Workaround in user code, immediately before `web::dispatch`:
+
+```tcl
+# Multipart parser needs raw bytes on the input channel.
+catch {fconfigure [web::request -channel] -encoding binary}
+
+# Hook fires after postdata parsing, before the command body runs —
+# restore utf-8 so response writes (web::sseSend / web::returnJson /
+# web::put) produce correctly encoded output. Under mod_websh the SAME
+# channel handles input AND output (response_ap.c uses APCHANNEL); leaving
+# -encoding binary in place would cause non-ASCII characters in responses
+# to go out as iso-8859-1 bytes, which the browser then interprets as utf-8
+# → replacement chars (e.g. "Größe" → "Gr��e").
+web::dispatch -hook {
+    catch {fconfigure [web::request -channel] -encoding utf-8}
+}
+```
+
+`web::request -channel` returns `apache` under mod_websh, `stdin` under
+CGI; `catch` is safe if the channel does not exist. `-encoding binary` is
+a byte-identity mapping (0x00–0xFF → U+0000–U+00FF), so json/form-urlencoded
+flows keep working during parsing — `web::getContent` handles charset
+decoding from Content-Type/CONTENT_ENCODING at access time, independent of
+channel encoding.
+
+The hook is essential whenever the response contains non-ASCII characters.
+Pure-ASCII responders may omit it, but it costs nothing and makes the
+dispatcher safer when extended later.
+
+Verification with `/dev/urandom`-generated test files (random bytes are the
+worst case): without the workaround, a 10 MB random binary saves as ~4.3 MB
+and the SHA differs; with the workaround, byte-identical 10 MB. ASCII-only
+files are unaffected even without the workaround because they contain no
+invalid utf-8 sequences. Verification of the utf-8 response: a `Größe` line
+in an SSE stream comes out as `47 72 c3 b6 c3 9f 65` (correct utf-8) when
+the hook is in place, vs. `47 72 f6 df 65` (iso-8859-1, broken) without it.
+
 ### `web::cmdurl`
 
 ```tcl
@@ -177,6 +226,8 @@ web::formvar ?option? ?key? ?value?
 Same interface as `web::param`. Access HTML form data (POST body after `web::dispatch`).
 
 For file uploads, the value is a list: `{localFile remoteFile truncated mimeType}` where `truncated` is 0 (success), -1 (upload disabled), or n (bytes truncated).
+
+⚠️ For **binary** file uploads, see [Binary multipart uploads silently truncated](#-binary-multipart-uploads-silently-truncated) under `web::dispatch` — the `truncated` value is **not** a reliable integrity indicator. Without the `-encoding binary` workaround there, binary files arrive shorter than uploaded and `truncated` does not flag it.
 
 ---
 
@@ -797,6 +848,36 @@ web::put ": keepalive\n"    ;# prevent proxy timeout
 web::response -flush
 ```
 
+#### Long-running streams: client-disconnect detection
+
+When the EventSource on the client side closes (tab closed, navigation,
+explicit `es.close()`), the response channel breaks. `web::sseSend` then
+throws a write error on the next send. Wrap the streaming loop in `catch`
+so a long-running job stops promptly instead of continuing to do work and
+hitting repeated write errors:
+
+```tcl
+web::sseStart
+set id 1
+web::sseSend "{\"msg\":\"started\"}" start $id
+
+if {[catch {
+    foreach phase {Preparation Processing Completion} {
+        after 2000
+        web::sseSend "{\"phase\":\"$phase\"}" progress [incr id]
+    }
+    web::sseSend "{\"success\":true}" done [incr id]
+} err]} {
+    # Client disconnected — nothing left to send, just log and exit.
+    web::log info "sse aborted: $err"
+}
+```
+
+Pattern from `examples/sse/sse-dispatch.ws3`. The JSON-payload convention
+(timestamp + structured fields per event, separate `event:` labels per
+phase: `start` / `progress` / `done`) is what the example also shows —
+useful when the client routes by `event` and parses `data` as JSON.
+
 #### ⚠️ Non-ASCII bytes kill the stream
 
 When `data` contains any byte > 0x7F (German `ä`/`ö`/`ü`, any UTF-8
@@ -1073,6 +1154,7 @@ web::dispatch
 - `web::response -set` sets headers (not `-header` — that subcommand does not exist)
 - `web::putx` braces are eval'd: `{web::put $var}` — escape with `\{`
 - Multipart text fields from `web::formvar` are correctly UTF-8 decoded
+- **Binary** multipart uploads need `fconfigure [web::request -channel] -encoding binary` before `web::dispatch`, plus an `-hook` that restores `-encoding utf-8` so response writes are not mangled — otherwise the file is silently truncated AND non-ASCII response chars come out as iso-8859-1 (see the gotcha under `web::dispatch`)
 - Use `web::getContent` for raw POST body, never `web::request CONTENT_DATA` directly
 - `web::response -flush` works in both CGI (Tcl flush) and mod_websh (`ap_rflush`)
 - `web::config encryptchain {}` disables URL querystring encryption

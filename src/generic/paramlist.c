@@ -18,6 +18,7 @@
 #include "paramlist.h"
 #include "log.h"
 #include "hashutl.h"
+#include "webtclcompat.h"
 
 static TCLCONST char *paramsubcmd[] =
     { "-count", "-unset", "-set", "-lappend", "-names", NULL };
@@ -208,7 +209,7 @@ Tcl_Obj *paramListAsListObj(ParamList * hash)
     Tcl_Obj *key = NULL;
     Tcl_Obj *val = NULL;
     Tcl_Obj *ele = NULL;
-    int valLen = 0;
+    Tcl_Size valLen = 0;
     int i;
 
     if (hash == NULL)
@@ -264,7 +265,7 @@ Tcl_Obj *paramListAsListObj(ParamList * hash)
 int listObjAsParamList(Tcl_Obj * list, ParamList * hash)
 {
 
-    int listLen = 0;
+    Tcl_Size listLen = 0;
     int i;
     Tcl_Obj *key = NULL;
     Tcl_Obj *val = NULL;
@@ -374,7 +375,7 @@ void destroyParamList(ParamList * hash)
  * ------------------------------------------------------------------------- */
 int paramGet(ParamList * paramList,
 	     Tcl_Interp * interp,
-	     int objc, Tcl_Obj * CONST objv[], int hasPrivate)
+	     int objc, Tcl_Obj * const objv[], int hasPrivate)
 {
     char *arg = NULL;
     int  opt = 0;

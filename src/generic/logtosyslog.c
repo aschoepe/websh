@@ -47,7 +47,7 @@ int destroyLogToSyslogData(Tcl_Interp * interp,
  * constructor
  * ------------------------------------------------------------------------- */
 ClientData createLogToSyslog(Tcl_Interp * interp, ClientData clientData,
-			     int objc, Tcl_Obj * CONST objv[])
+			     int objc, Tcl_Obj * const objv[])
 {
 
     LogToSyslogData *logToSyslogData = NULL;

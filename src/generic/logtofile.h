@@ -58,7 +58,7 @@ LogToFileData *createLogToFileData();
 int destroyLogToFileData(Tcl_Interp * interp, LogToFileData * logToFileData);
 
 ClientData createLogToFile(Tcl_Interp * interp, ClientData clientData,
-			   int objc, Tcl_Obj * CONST objv[]);
+			   int objc, Tcl_Obj * const objv[]);
 int destroyLogToFile(Tcl_Interp * interp, ClientData clientData);
 int logToFile(Tcl_Interp * interp, ClientData clientData, char *msg);
 

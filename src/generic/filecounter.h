@@ -61,7 +61,7 @@ int nextSeqNo(Tcl_Interp * interp, SeqNoGenerator * seqnogen, int *seqno, int ne
  * The function to register with TCL
  * ------------------------------------------------------------------------*/
 int filecounter(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[]);
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
 
 int Web_Filecounter(ClientData clientData,
 		    Tcl_Interp * interp, int objc, Tcl_Obj * objv[]);

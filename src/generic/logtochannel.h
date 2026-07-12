@@ -31,7 +31,7 @@ LogToChannelData *createLogToChannelData();
 int destroyLogToChannelData(Tcl_Interp * interp,
 			    LogToChannelData * logToChannelData);
 ClientData createLogToChannel(Tcl_Interp * interp, ClientData clientData,
-			      int objc, Tcl_Obj * CONST objv[]);
+			      int objc, Tcl_Obj * const objv[]);
 int destroyLogToChannel(Tcl_Interp * interp, ClientData clientData);
 int logToChannel(Tcl_Interp * interp, ClientData clientData, char *msg);
 

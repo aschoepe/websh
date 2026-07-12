@@ -31,18 +31,19 @@
 #include "messages.h"
 #include "log.h"
 #include "macros.h"
+#include "webtclcompat.h"
 
 /* ----------------------------------------------------------------------------
  * Web_Send -- 
  * ------------------------------------------------------------------------- */
 int Web_Send(ClientData clientData,
-	     Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+	     Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     int flags = 0;
     int mode = 0;
     int cmdcode = 0;
-    int len = 0;
+    Tcl_Size len = 0;
     Tcl_Channel tc;
     char *tmpStr = NULL;
 
@@ -110,7 +111,7 @@ int Web_Send(ClientData clientData,
  * Web_Recv -- 
  * ------------------------------------------------------------------------- */
 int Web_Recv(ClientData clientData,
-	     Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+	     Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     int mode = 0;
@@ -181,7 +182,7 @@ int Web_Recv(ClientData clientData,
  * Web_MsgFlag -- 
  * ------------------------------------------------------------------------- */
 int Web_MsgFlag(ClientData clientData,
-		Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
+		Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
 {
 
     int flags;
@@ -228,7 +229,7 @@ int parseFlags(Tcl_Interp * interp, char *flaglist, int *flags)
 {
 
     TCLCONST char **argv;
-    int argc;
+    Tcl_Size argc;
     int count;
 
     *flags = 0;
