@@ -390,13 +390,13 @@ test put-3.0 {websh3_puts: write a long string to a global var} {
     string length $puts_3_0
 } {3069}
 
-test put-3.1 {äöü (and test for global)} {
+test put-3.1 {Ã¤Ã¶Ã¼ (and test for global)} {
     web::response -select #web_output_test_3_1
     web::response -sendheader 0
-    web::put #web_output_test_3_1 äöü
+    web::put #web_output_test_3_1 Ã¤Ã¶Ã¼
     set res [info global web_output_test_3_1]
     append res $web_output_test_3_1
-} {web_output_test_3_1äöü}
+} {web_output_test_3_1Ã¤Ã¶Ã¼}
 
 test put-3.2 {open file, put, close, open new} {unixOnly} {
 
@@ -565,8 +565,8 @@ test output-4.12 {-set returns new value} {
 
     web::response -resetall
     web::response -select #output4_12
-    web::response -set ä ö
-} {ö}
+    web::response -set Ã¤ Ã¶
+} {Ã¶}
 
 test output-5.0 {-names} {
 
@@ -643,25 +643,25 @@ test varchannel-1.1 {create} {emptyTest} {
 
     set tst [web::varopen vct1_1]
     puts $tst "hello, world"
-    puts $tst "international: äöü"
+    puts $tst "international: Ã¤Ã¶Ã¼"
     puts $tst "third line"
     close $tst
     set vct1_1
 } {hello, world
-international: äöü
+international: Ã¤Ã¶Ã¼
 third line
 }
 
 test varchannel-1.2 {use variable inbetween} {emptyTest} {
 
     set tst [web::varopen vct1_2]
-    puts $tst "international: äöü"
+    puts $tst "international: Ã¤Ã¶Ã¼"
     append vct1_2 "my own contribution\n"
     puts $tst "third line"
     close $tst
     set vct1_2
 } {my own contribution
-international: äöü
+international: Ã¤Ã¶Ã¼
 third line
 }
 

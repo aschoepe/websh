@@ -74,20 +74,20 @@ test nocrypt-2.2 {empty string} {
 
 test nocrypt-2.3 {normal operation} {
 
-    web::list2uri "üöä dsds aaaa ääé GHGHGH oops"
+    web::list2uri "Ã¼Ã¶Ã¤ dsds aaaa Ã¤Ã¤Ã© GHGHGH oops"
 
 } {%fc%f6%e4=dsds&aaaa=%e4%e4%e9&GHGHGH=oops}
 
 
 test nocrypt-2.4 {symmetry} {
 
-    set msg "This is a international message äüö è 8"
+    set msg "This is a international message Ã¤Ã¼Ã¶ Ã¨ 8"
     string compare [web::uri2list [web::list2uri $msg]] $msg
 } {0}
 
 test nocrypt-2.5 {encrypt} {
 
-    web::list2uri "äText äText"
+    web::list2uri "Ã¤Text Ã¤Text"
 
 } {%e4Text=%e4Text}
 
@@ -95,13 +95,13 @@ test nocrypt-2.6 {decrypt} {
 
     web::uri2list %e4=%f6&%fc=%e8
 
-} {ä ö ü è}
+} {Ã¤ Ã¶ Ã¼ Ã¨}
 
 test nocrypt-2.7 {stress test} {
 
-    web::uri2list [web::list2uri "äéü wörks, bùt *ç%&/ must work too !!"]
+    web::uri2list [web::list2uri "Ã¤Ã©Ã¼ wÃ¶rks, bÃ¹t *Ã§%&/ must work too !!"]
 
-} {äéü wörks, bùt *ç%&/ must work too !!}
+} {Ã¤Ã©Ã¼ wÃ¶rks, bÃ¹t *Ã§%&/ must work too !!}
 
 # -----------------------------------------------------------------------------
 # special cases

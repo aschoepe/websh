@@ -118,7 +118,7 @@ test messages-2.1c {web::send and receive unicode} {
     set fileId [open $fileName "w"]
     set icmd  10011
     set iflag 131072
-    set text "abc\u00c2defä1ö2ü3"
+    set text "abc\u00c2defÃ¤1Ã¶2Ã¼3"
     web::send $fileId $icmd $text \#$iflag
     close $fileId
 

@@ -119,7 +119,7 @@ test script-evalfile-1.3 {web::putxfile and web::putx of 8-bit stuff} {
     set fileName $curTim-[pid]-evalfile.tcl
     set fileId [open $fileName "w"]
     
-    set text "üöäüéàè"
+    set text "Ã¼Ã¶Ã¤Ã¼Ã©Ã Ã¨"
     puts -nonewline $fileId $text
     close $fileId
 

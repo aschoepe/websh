@@ -191,7 +191,7 @@ test filecontext-1.8 {long context} {
 
     ctx18::init
     set tmp mark18
-    append tmp [string repeat "öüabc\rä
+    append tmp [string repeat "Ã¶Ã¼abc\rÃ¤
 " 200]
     ctx18::cset ltst $tmp
     ctx18::commit
@@ -213,7 +213,7 @@ test filecontext-1.9 {short context} {
 
     ctx19::init
     set tmp mark19
-    append tmp [string repeat "öüabc\rä
+    append tmp [string repeat "Ã¶Ã¼abc\rÃ¤
 " 10]
     ctx19::cset ltst $tmp
     ctx19::commit
@@ -230,14 +230,14 @@ test filecontext-1.10 {try puts -nonewline} {
 
     set fh [open [set fn [web::tempfile]] w]
     set tmp mark
-    append tmp [string repeat "äöüabc" 500]
+    append tmp [string repeat "Ã¤Ã¶Ã¼abc" 500]
     puts -nonewline $fh $tmp
     close $fh
     set fh [open $fn r]
     set res [read $fh 10]
     close $fh
     set res
-} {markäöüabc}
+} {markÃ¤Ã¶Ã¼abc}
 
 test filecontext-1.11 {try rejected ids} {
 

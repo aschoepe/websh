@@ -64,8 +64,8 @@ test uricode-2.3 {symmetry} {
 } $in
 
 test uricode-2.3a {symmetry} {
-    web::uridecode [web::uriencode "abc äöü éàè"]
-} {abc äöü éàè}
+    web::uridecode [web::uriencode "abc Ã¤Ã¶Ã¼ Ã©Ã Ã¨"]
+} {abc Ã¤Ã¶Ã¼ Ã©Ã Ã¨}
 
 test uricode-2.3b {= and &} {
     web::uriencode "a=b&c=d"
@@ -80,15 +80,15 @@ test uricode-2.4 {web::uridecode - repeated use} {
     set tst
 } {~~~~~~~~~~~~~~~}
 
-test uricode-2.5 {äöü} {
+test uricode-2.5 {Ã¤Ã¶Ã¼} {
     set in {%E4%F6%FC}
     set out [web::uridecode $in]
-} {äöü}
+} {Ã¤Ã¶Ã¼}
 
 test uricode-2.6 {special cases} {
-    set in {%f6%F6%föö%}
+    set in {%f6%F6%fÃ¶Ã¶%}
     set out [web::uridecode $in]
-} {öö%föö%}
+} {Ã¶Ã¶%fÃ¶Ã¶%}
 
 # cleanup
 ::tcltest::cleanupTests

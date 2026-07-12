@@ -34,8 +34,8 @@ web::config decryptchain web::decryptd
 # success, standard cryption type (D)
 # -----------------------------------------------------------------------------
 test crypt-1.1 {crypt and decrypt correct} {
-    web::decrypt  [web::encrypt "Hallo È‡Ë!"]
-} {Hallo È‡Ë!}
+    web::decrypt  [web::encrypt "Hallo √©√†√®!"]
+} {Hallo √©√†√®!}
 
 
 #------------------------------------------------------------------------------
@@ -81,14 +81,14 @@ test decrypt-1.3 {decrypt: empty string} {
 
 test decrypt-1.4 {normal operation} {
 
-    set res [web::encrypt "Hello È‡Ë!"]
+    set res [web::encrypt "Hello √©√†√®!"]
     lappend res [web::decrypt $res]
 
-} {XDIVAhkgYnDaThxIKkSwhFLko9Z {Hello È‡Ë!}}
+} {XDIVAhkgYnDaThxIKkSwhFLko9Z {Hello √©√†√®!}}
 
 test decrypt-1.5 {cryptlist symmetry} {
 
-    set res [list [list a b c] "Hallo È‡Ë!"]
+    set res [list [list a b c] "Hallo √©√†√®!"]
     string equal $res [web::decrypt [web::encrypt $res]]
 
 } {1}
@@ -141,15 +141,15 @@ test decrypt-2.4 {error signals 4} {
 #     lappend res [web::decrypt "Xaabc"]
 #     lappend res [web::decrypt "XZabc"]
 #     lappend res [web::decrypt "YCa"]
-#     lappend res [web::decrypt "fˆˆ"]
-#     lappend res [web::decrypt "b‰r"]
+#     lappend res [web::decrypt "f√∂√∂"]
+#     lappend res [web::decrypt "b√§r"]
 #     set tmp "\u60\u70\u300\u400\u2000"
 #     lappend res [string compare $tmp [web::decrypt [web::encrypt $tmp]]]
 
 #     web::config decryptchain web::decryptd
 
 #     set res
-# } {X0abc Xaabc XZabc YCa fˆˆ b‰r 0}
+# } {X0abc Xaabc XZabc YCa f√∂√∂ b√§r 0}
 
 
 # cleanup
