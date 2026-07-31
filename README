@@ -1,5 +1,5 @@
                          --------------------
-                         Websh, Version 3.7.7
+                         Websh, Version 3.7.8
                          --------------------
 
             Copyright 1996-2001, Netcetera AG, Switzerland
@@ -44,8 +44,7 @@ Key features:
 - Request routing (web::dispatch)
 - URL generation (web::cmdurl)
 - Form data and multipart/form-data parsing
-- Session management (file-based)
-- JWT encode/decode
+- Session management (file-based; JWT itself is a separate Tcl package "jwt")
 - Server-Sent Events (web::sseStart, web::sseSend)
 - Logging (web::log, web::loglevel, web::logdest)
 - URL encoding/decoding, HTML conversion
@@ -73,10 +72,10 @@ Requirements:
   autoconf            # only needed after editing configure.ac
   ./configure --with-tcl=/path/to/tcl/lib
   make
-  make test           # expected: 521 passed, 5 skipped, 0 failed
+  make test           # expected: 497 passed, 5 skipped, 0 failed
   make install
 
-Build targets (VERSION as set in configure.ac, e.g. 3.7.6; shared
+Build targets (VERSION as set in configure.ac, e.g. 3.7.8; shared
 library extension is .so on Linux, .dylib on macOS):
 - webshVERSION          standalone binary (dynamically linked to libwebsh)
 - libwebshVERSION.so    TEA-compliant shared library (Tcl package "websh")

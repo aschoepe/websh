@@ -345,6 +345,8 @@ int webDeHtmlify(ConvData * convData, Tcl_Obj * in, Tcl_Obj * out)
 			       plainend - plainfirst + 1);
     }
 
+    (void) err;			/* counted by HANDLE_* macros, not reported */
+
     return TCL_OK;
 }
 

@@ -5,7 +5,7 @@
 
 <article lang="en">
 
-  <title>Websh Reference 3.7.7</title>
+  <title>Websh Reference 3.7.8</title>
   <section id="intro">
     <title>Introduction</title>
     <section id="general_remarks">
@@ -2970,71 +2970,18 @@ Hello, world!
   <section id="json_web_tokens">
     <title>JSON Web Tokens (JWT)</title>
     <para>
-      The compiled-in <literal>::jwt</literal> namespace provides JWT
-      signing and verification. It requires the external C packages
-      <literal>nacl</literal> and <literal>rl_json</literal> (loaded
-      on first use). Algorithms are selected via the header field
-      <literal>alg</literal>: <literal>HS256</literal> (default),
-      <literal>HS512</literal>, or <literal>NaCl</literal>. Secrets
-      are normalized to 32 bytes (zero-padded or truncated).
+      Since websh 3.7.8, JWT support is provided by the separate
+      pure-Tcl package <literal>jwt</literal> (version 1.1) instead of
+      being embedded in websh. Load it with <literal>package require
+      jwt</literal>; it provides <command>::jwt::sign</command>,
+      <command>::jwt::verify</command> (with <option>-json</option>,
+      <option>-claims</option> and <option>-leeway</option>) and the
+      <command>::jwt::base64url_encode</command> /
+      <command>::jwt::base64url_decode</command> utilities. See the
+      README of the jwt package for the full documentation. websh
+      itself no longer depends on the <literal>nacl</literal> and
+      <literal>rl_json</literal> packages.
     </para>
-    <section id="jwt::sign">
-      <title><command>::jwt::sign</command></title>
-      <para>
-	<cmdsynopsis>
-	  <command>::jwt::sign</command>
-	  <arg choice="req"><replaceable>header</replaceable></arg>
-	  <arg choice="req"><replaceable>payload</replaceable></arg>
-	  <arg choice="req"><replaceable>secret</replaceable></arg>
-	</cmdsynopsis>
-	<replaceable>header</replaceable> and
-	<replaceable>payload</replaceable> are JSON text. Returns the
-	signed token
-	<literal>header.payload.signature</literal> (base64url).
-      </para>
-    </section>
-    <section id="jwt::verify">
-      <title><command>::jwt::verify</command></title>
-      <para>
-	<cmdsynopsis>
-	  <command>::jwt::verify</command>
-	  <arg choice="req"><replaceable>token</replaceable></arg>
-	  <arg choice="req"><replaceable>secret</replaceable></arg>
-	  <arg choice="opt">-json</arg>
-	  <arg choice="opt">-claims</arg>
-	  <arg choice="opt">-leeway <replaceable>sec</replaceable></arg>
-	</cmdsynopsis>
-	Without options, returns a boolean (<literal>true</literal> /
-	<literal>false</literal>); this is a signature check only, the
-	time claims <literal>exp</literal> and <literal>nbf</literal>
-	are not evaluated.
-      </para>
-      <para>
-	With <option>-claims</option>, the RFC 7519 time claims are
-	additionally validated: a signature-valid token is rejected
-	when not yet active (<literal>nbf</literal> in the future) or
-	expired (<literal>exp</literal> in the past). Absent claims
-	are not enforced. <option>-leeway
-	<replaceable>sec</replaceable></option> adds a clock-skew
-	tolerance to both checks (default 0; only effective together
-	with <option>-claims</option>).
-      </para>
-      <para>
-	With <option>-json</option>, an <literal>rl_json</literal>
-	document is returned instead of a boolean. The fields
-	<literal>header</literal> and <literal>payload</literal> hold
-	the raw JSON text as string values (re-parsable), the field
-	<literal>verify</literal> is a boolean. When
-	<option>-claims</option> is also given, an additional field
-	<literal>reason</literal> is present with one of
-	<literal>ok</literal>, <literal>signature</literal>,
-	<literal>notbefore</literal>, <literal>expired</literal>, or
-	<literal>payload</literal>. Read a claim in two steps:
-	<programlisting>set res    [::jwt::verify $tok $secret -claims -json]
-set claims [json get $res payload]   ;# raw JSON text
-json get $claims sub</programlisting>
-      </para>
-    </section>
   </section>
   <section id="uri-html-_en-decoding">
     <title>Uri-/html- en-/decoding</title>

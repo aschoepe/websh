@@ -868,93 +868,22 @@ Format millisecond timestamp as `2024-01-15T14:30:00.123`. Without argument uses
 
 ---
 
-## JWT (`jwt.tcl`)
+## JWT — separate package (since websh 3.7.8)
 
-Compiled-in `::jwt` namespace (requires the external C packages `nacl` and
-`rl_json`). Algorithms via the header `alg`: `HS256` (default), `HS512`,
-`NaCl`. Secrets are normalized to 32 bytes (zero-padded / truncated).
-
-### `::jwt::sign`
+JWT support is **not part of websh anymore**. The former embedded `jwt`
+package lives on as the standalone pure-Tcl package **`jwt` 1.1**
+(BSD-3, `~/src/jwt`, installed under `/opt/tcl/<ver>/lib/jwt1.1`;
+requires the C packages `nacl` and `rl_json` at runtime):
 
 ```tcl
+package require jwt
 ::jwt::sign header payload secret
-```
-
-`header` and `payload` are JSON text. Returns the signed token
-`header.payload.signature` (base64url). Example:
-
-```tcl
-set tok [::jwt::sign {{"alg":"HS256","typ":"JWT"}} \
-                     {{"sub":"alice","exp":1893456000}} $secret]
-```
-
-### `::jwt::verify`
-
-```tcl
 ::jwt::verify token secret ?-json? ?-claims? ?-leeway sec?
+::jwt::base64url_encode / ::jwt::base64url_decode
 ```
 
-**Without `-json`** — returns a boolean string `true` / `false`. By default
-this is a **signature check only**; `exp`/`nbf` are *not* evaluated:
-
-```tcl
-if {[::jwt::verify $tok $secret]} { ... }
-```
-
-**`-claims`** (opt-in) — additionally validates the RFC 7519 time claims.
-A signature-valid token is rejected when not-yet-active (`nbf` > now) or
-expired (`exp` ≤ now). Claims that are absent are not enforced. No
-clock-skew leeway is applied. Default behaviour (without `-claims`) is
-unchanged — signature only:
-
-```tcl
-if {[::jwt::verify $tok $secret -claims]} { ... }   ;# false if expired/early
-```
-
-**`-leeway sec`** — clock-skew tolerance for the `-claims` time checks
-(default `0`). Widens the valid window symmetrically: expired only when
-`exp + sec ≤ now`, not-yet-active only when `nbf - sec > now`. Effective
-**only together with `-claims`** (no-op otherwise); a non-integer or
-negative value is treated as `0`:
-
-```tcl
-::jwt::verify $tok $secret -claims -leeway 60   ;# tolerate 60s skew
-```
-
-**With `-json`** — returns an `rl_json` document. `header` and `payload`
-are stored as JSON **string** values holding the raw JSON text (not
-embedded objects), so every field yields directly usable, re-parsable
-output:
-
-| `json get $res …` | Result | Type | Present |
-|---|---|---|---|
-| `verify` | `1` / `0` | boolean | always |
-| `header` | `{"alg":"HS256","typ":"JWT"}` | JSON text (string) | always |
-| `payload` | `{"sub":"alice","exp":1893456000}` | JSON text (string) | always |
-| `reason` | `ok` \| `signature` \| `notbefore` \| `expired` \| `payload` | string | only with `-claims` |
-
-The `reason` key is added **only** when `-claims` is passed; plain `-json`
-keeps the stable three-key contract. Failure precedence:
-`signature` → `notbefore` → `expired` (`payload` = claims unparsable).
-
-**Reading a claim — two steps** (do *not* expect `json get $res payload` to
-be navigable directly; it returns the raw text, by design):
-
-```tcl
-set res    [::jwt::verify $tok $secret -claims -json]
-if {![json get $res verify]} { error "bad token: [json get $res reason]" }
-set claims [json get $res payload]      ;# raw JSON text
-set sub    [json get $claims sub]       ;# claim access on the sub-document
-```
-
-(With `-claims` the `exp`/`nbf` checks are done for you; without it, test
-`exp` manually: `json get $claims exp` vs. `[clock seconds]`.)
-
-> Rationale: `payload`/`header` are deliberately raw JSON strings, not
-> embedded `rl_json` objects. A direct `json get $res payload` therefore
-> returns re-parsable JSON text (predictable), instead of the surprising
-> Tcl-dict form that an embedded object would yield. Parse claims with the
-> two-step pattern above.
+Full API documentation: README of the jwt package. websh itself no
+longer depends on `nacl`/`rl_json`.
 
 ---
 
