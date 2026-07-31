@@ -24,7 +24,7 @@ INSTALL_APACHE = @INSTALL_APACHE@
 LDCONFIG = @LDCONFIG@
 RESTART_APACHE = @RESTART_APACHE@
 
-SCRIPT_SOURCES = ../generic/context.tcl ../generic/script.ws3 ../generic/cookie.ws3 ../generic/sessctx.ws3 ../generic/filerandom.tcl ../generic/genpasswd.tcl ../generic/webutils.tcl ../generic/jwt.tcl
+SCRIPT_SOURCES = ../generic/context.tcl ../generic/script.ws3 ../generic/cookie.ws3 ../generic/sessctx.ws3 ../generic/filerandom.tcl ../generic/genpasswd.tcl ../generic/webutils.tcl
 
 web_OBJECTS = args.o \
 	cfg.o \

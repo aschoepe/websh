@@ -82,54 +82,20 @@ web::command default { web::put "Hello" }
 web::dispatch
 ```
 
-#### ⚠️ Binary multipart uploads silently truncated
+#### Binary multipart uploads (fixed in 3.7.8)
 
-When parsing `multipart/form-data`, `web::dispatch` sets the input channel
-to `-translation binary` (see `formdata.c`) but **does not** set
-`-encoding binary`. The channel therefore reads file bytes through the
-system encoding (utf-8 on macOS/Debian). Invalid utf-8 byte sequences in
-binary files (xlsx, pdf, zip, jpeg, /dev/urandom, …) are silently replaced
-with `U+FFFD` (replacement char) or lost — the saved file is shorter than
-the upload, and the `truncated` element of `web::formvar` (lindex 2)
-**does not** flag the loss (it stays at 0 or marginally negative, derived
-from `readBytes - writtenBytes`).
+Up to websh 3.7.7, multipart parsing read file bytes through the channel
+encoding (utf-8): valid multi-byte sequences inside binary uploads
+(xlsx, pdf, zip, jpeg, ...) collapsed and files arrived shorter than
+uploaded, without the `truncated` element of `web::formvar` flagging it.
+**Fixed in 3.7.8:** `readAndDumpBody` (formdata.c) reads upload bodies
+byte-faithfully (iso8859-1 channel encoding, binary re-write), so saved
+files are byte-identical to the upload on Tcl 8.6 and Tcl 9.
 
-Workaround in user code, immediately before `web::dispatch`:
-
-```tcl
-# Multipart parser needs raw bytes on the input channel.
-catch {fconfigure [web::request -channel] -encoding binary}
-
-# Hook fires after postdata parsing, before the command body runs —
-# restore utf-8 so response writes (web::sseSend / web::returnJson /
-# web::put) produce correctly encoded output. Under mod_websh the SAME
-# channel handles input AND output (response_ap.c uses APCHANNEL); leaving
-# -encoding binary in place would cause non-ASCII characters in responses
-# to go out as iso-8859-1 bytes, which the browser then interprets as utf-8
-# → replacement chars (e.g. "Größe" → "Gr��e").
-web::dispatch -hook {
-    catch {fconfigure [web::request -channel] -encoding utf-8}
-}
-```
-
-`web::request -channel` returns `apache` under mod_websh, `stdin` under
-CGI; `catch` is safe if the channel does not exist. `-encoding binary` is
-a byte-identity mapping (0x00–0xFF → U+0000–U+00FF), so json/form-urlencoded
-flows keep working during parsing — `web::getContent` handles charset
-decoding from Content-Type/CONTENT_ENCODING at access time, independent of
-channel encoding.
-
-The hook is essential whenever the response contains non-ASCII characters.
-Pure-ASCII responders may omit it, but it costs nothing and makes the
-dispatcher safer when extended later.
-
-Verification with `/dev/urandom`-generated test files (random bytes are the
-worst case): without the workaround, a 10 MB random binary saves as ~4.3 MB
-and the SHA differs; with the workaround, byte-identical 10 MB. ASCII-only
-files are unaffected even without the workaround because they contain no
-invalid utf-8 sequences. Verification of the utf-8 response: a `Größe` line
-in an SSE stream comes out as `47 72 c3 b6 c3 9f 65` (correct utf-8) when
-the hook is in place, vs. `47 72 f6 df 65` (iso-8859-1, broken) without it.
+Workaround **only for websh <= 3.7.7**: before `web::dispatch`, set
+`catch {fconfigure [web::request -channel] -encoding binary}` and restore
+utf-8 in a `-hook` (under mod_websh the same channel handles input and
+output, so leaving binary in place breaks non-ASCII responses).
 
 ### `web::cmdurl`
 
@@ -227,7 +193,7 @@ Same interface as `web::param`. Access HTML form data (POST body after `web::dis
 
 For file uploads, the value is a list: `{localFile remoteFile truncated mimeType}` where `truncated` is 0 (success), -1 (upload disabled), or n (bytes truncated).
 
-⚠️ For **binary** file uploads, see [Binary multipart uploads silently truncated](#-binary-multipart-uploads-silently-truncated) under `web::dispatch` — the `truncated` value is **not** a reliable integrity indicator. Without the `-encoding binary` workaround there, binary files arrive shorter than uploaded and `truncated` does not flag it.
+For **binary** file uploads on websh <= 3.7.7, the `truncated` value was not a reliable integrity indicator — see the note under `web::dispatch`. Fixed in 3.7.8: upload bodies are read byte-faithfully.
 
 ---
 
@@ -949,93 +915,22 @@ Format millisecond timestamp as `2024-01-15T14:30:00.123`. Without argument uses
 
 ---
 
-## JWT (`jwt.tcl`)
+## JWT — separate package (since websh 3.7.8)
 
-Compiled-in `::jwt` namespace (requires the external C packages `nacl` and
-`rl_json`). Algorithms via the header `alg`: `HS256` (default), `HS512`,
-`NaCl`. Secrets are normalized to 32 bytes (zero-padded / truncated).
-
-### `::jwt::sign`
+JWT support is **not part of websh anymore**. The former embedded `jwt`
+package lives on as the standalone pure-Tcl package **`jwt` 1.1**
+(BSD-3, `~/src/jwt`, installed under `/opt/tcl/<ver>/lib/jwt1.1`;
+requires the C packages `nacl` and `rl_json` at runtime):
 
 ```tcl
+package require jwt
 ::jwt::sign header payload secret
-```
-
-`header` and `payload` are JSON text. Returns the signed token
-`header.payload.signature` (base64url). Example:
-
-```tcl
-set tok [::jwt::sign {{"alg":"HS256","typ":"JWT"}} \
-                     {{"sub":"alice","exp":1893456000}} $secret]
-```
-
-### `::jwt::verify`
-
-```tcl
 ::jwt::verify token secret ?-json? ?-claims? ?-leeway sec?
+::jwt::base64url_encode / ::jwt::base64url_decode
 ```
 
-**Without `-json`** — returns a boolean string `true` / `false`. By default
-this is a **signature check only**; `exp`/`nbf` are *not* evaluated:
-
-```tcl
-if {[::jwt::verify $tok $secret]} { ... }
-```
-
-**`-claims`** (opt-in) — additionally validates the RFC 7519 time claims.
-A signature-valid token is rejected when not-yet-active (`nbf` > now) or
-expired (`exp` ≤ now). Claims that are absent are not enforced. No
-clock-skew leeway is applied. Default behaviour (without `-claims`) is
-unchanged — signature only:
-
-```tcl
-if {[::jwt::verify $tok $secret -claims]} { ... }   ;# false if expired/early
-```
-
-**`-leeway sec`** — clock-skew tolerance for the `-claims` time checks
-(default `0`). Widens the valid window symmetrically: expired only when
-`exp + sec ≤ now`, not-yet-active only when `nbf - sec > now`. Effective
-**only together with `-claims`** (no-op otherwise); a non-integer or
-negative value is treated as `0`:
-
-```tcl
-::jwt::verify $tok $secret -claims -leeway 60   ;# tolerate 60s skew
-```
-
-**With `-json`** — returns an `rl_json` document. `header` and `payload`
-are stored as JSON **string** values holding the raw JSON text (not
-embedded objects), so every field yields directly usable, re-parsable
-output:
-
-| `json get $res …` | Result | Type | Present |
-|---|---|---|---|
-| `verify` | `1` / `0` | boolean | always |
-| `header` | `{"alg":"HS256","typ":"JWT"}` | JSON text (string) | always |
-| `payload` | `{"sub":"alice","exp":1893456000}` | JSON text (string) | always |
-| `reason` | `ok` \| `signature` \| `notbefore` \| `expired` \| `payload` | string | only with `-claims` |
-
-The `reason` key is added **only** when `-claims` is passed; plain `-json`
-keeps the stable three-key contract. Failure precedence:
-`signature` → `notbefore` → `expired` (`payload` = claims unparsable).
-
-**Reading a claim — two steps** (do *not* expect `json get $res payload` to
-be navigable directly; it returns the raw text, by design):
-
-```tcl
-set res    [::jwt::verify $tok $secret -claims -json]
-if {![json get $res verify]} { error "bad token: [json get $res reason]" }
-set claims [json get $res payload]      ;# raw JSON text
-set sub    [json get $claims sub]       ;# claim access on the sub-document
-```
-
-(With `-claims` the `exp`/`nbf` checks are done for you; without it, test
-`exp` manually: `json get $claims exp` vs. `[clock seconds]`.)
-
-> Rationale: `payload`/`header` are deliberately raw JSON strings, not
-> embedded `rl_json` objects. A direct `json get $res payload` therefore
-> returns re-parsable JSON text (predictable), instead of the surprising
-> Tcl-dict form that an embedded object would yield. Parse claims with the
-> two-step pattern above.
+Full API documentation: README of the jwt package. websh itself no
+longer depends on `nacl`/`rl_json`.
 
 ---
 
