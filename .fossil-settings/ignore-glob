@@ -8,3 +8,6 @@ src/unix/config.status
 src/unix/script.h
 src/unix/configure~
 doc/html/*
+src/unix/configure
+src/unix/Makefile
+src/unix/pkgIndex.tcl

@@ -69,7 +69,7 @@ Requirements:
 - GNU make
 
   cd src/unix
-  autoconf            # only needed after editing configure.ac
+  autoconf            # required: configure is not in the repository (generated files are not tracked)
   ./configure --with-tcl=/path/to/tcl/lib
   make
   make test           # expected: 497 passed, 5 skipped, 0 failed
