@@ -21,6 +21,18 @@ PACKAGE=$PACKAGE_NAME
 AC_SUBST(VERSION)
 AC_SUBST(PACKAGE)
 
+# Major.minor series of this package. Code (lib/websh<full>, mod_websh<full>.so,
+# bin/websh<full>) stays fully versioned -- the Tcl package version and the
+# NEEDED entry of the Apache module are part of the contract. The shipped
+# configuration goes to share/websh<major>.<minor> instead, so WebshConfig in
+# httpd.conf survives a patch release untouched.
+MAJOR_VERSION=`echo "$PACKAGE_VERSION" | sed -e 's/[[^0-9]].*$//'`
+MINOR_VERSION=`echo "$PACKAGE_VERSION" | sed -e 's/^[[0-9]]*\.//' -e 's/[[^0-9]].*$//'`
+SERIES_VERSION="$MAJOR_VERSION.$MINOR_VERSION"
+AC_SUBST(MAJOR_VERSION)
+AC_SUBST(MINOR_VERSION)
+AC_SUBST(SERIES_VERSION)
+
 #--------------------------------------------------------------------
 # Load tclConfig.sh
 #--------------------------------------------------------------------
@@ -362,6 +374,50 @@ AC_SUBST(TCL_LIB_SPEC)
 TEA_PROG_TCLSH
 
 #--------------------------------------------------------------------
+# System encoding of the shipped websh.conf
+#
+# Must come after TEA_PROG_TCLSH: the encoding name is validated against
+# the Tcl installation we build against. With an empty $TCLSH_PROG the
+# check would silently pass -- the failure mode that looks like success.
+#--------------------------------------------------------------------
+
+AC_ARG_WITH([system-encoding],
+    AS_HELP_STRING([--with-system-encoding@<:@=NAME@:>@],
+        [encoding the shipped websh.conf sets via `encoding system' (default: utf-8)]),
+    [], [with_system_encoding=utf-8])
+
+# --with-system-encoding without a value yields "yes", which is no encoding name.
+case "$with_system_encoding" in
+    yes|"") with_system_encoding=utf-8 ;;
+esac
+
+if test "x$with_system_encoding" = xno; then
+    SYSTEM_ENCODING_LINE="# (no 'encoding system' line -- configured with --without-system-encoding)"
+else
+    AC_MSG_CHECKING([whether Tcl knows the encoding $with_system_encoding])
+    websh_enc_ok=`WEBSH_ENC="$with_system_encoding" $TCLSH_PROG << 'EOF'
+if {[[catch {encoding system $env(WEBSH_ENC)}]]} { puts 0 } else { puts 1 }
+EOF
+`
+    if test "x$websh_enc_ok" = x1; then
+        AC_MSG_RESULT([yes])
+    else
+        AC_MSG_RESULT([no])
+        AC_MSG_ERROR([unknown Tcl encoding "$with_system_encoding" -- see `encoding names' (note: utf-8, not utf8)])
+    fi
+    SYSTEM_ENCODING_LINE="encoding system $with_system_encoding"
+fi
+AC_SUBST(SYSTEM_ENCODING_LINE)
+
+# Installation path of the shipped configuration, substituted into websh.conf
+# so that "set webshroot ..." is correct out of the box. TEA_PREFIX has run,
+# so $prefix is resolved; keep the NONE fallback anyway.
+websh_prefix=$prefix
+test "x$websh_prefix" = xNONE && websh_prefix=$ac_default_prefix
+WEBSHROOT="$websh_prefix/share/websh$SERIES_VERSION"
+AC_SUBST(WEBSHROOT)
+
+#--------------------------------------------------------------------
 # Miscellaneous
 #--------------------------------------------------------------------
 
@@ -444,5 +500,8 @@ AC_SUBST(RESTART_APACHE)
 # Generate output files
 #--------------------------------------------------------------------
 
-AC_CONFIG_FILES([Makefile pkgIndex.tcl])
+# websh.conf is generated into the build directory (not next to its .in file),
+# so a VPATH build writes where it is allowed to and install-doc has one place
+# to pick it up from.
+AC_CONFIG_FILES([Makefile pkgIndex.tcl websh.conf:../../doc/mod_websh/conf/websh.conf.in])
 AC_OUTPUT

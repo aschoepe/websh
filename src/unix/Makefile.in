@@ -88,6 +88,7 @@ SHELL = @SHELL@
 
 srcdir = @srcdir@
 GENERIC_DIR = $(srcdir)/../generic
+DOC_DIR = $(srcdir)/../../doc
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 
@@ -95,12 +96,16 @@ bindir = @bindir@
 libdir = @libdir@
 pkgdir = $(libdir)/websh$(VERSION)
 moddir = $(libdir)/httpd/modules
-sharedir = $(prefix)/share/websh$(VERSION)
+# Configuration and demo material live on the major.minor line, so WebshConfig
+# in httpd.conf survives a patch release. Code stays fully versioned (pkgdir,
+# mod_websh, bin) -- see configure.ac.
+sharedir = $(prefix)/share/websh$(SERIES_VERSION)
 docdir = $(sharedir)/htdocs
 cfgdir = $(sharedir)/conf
 
 PACKAGE = @PACKAGE@
 VERSION = @VERSION@
+SERIES_VERSION = @SERIES_VERSION@
 CC = @CC@
 CFLAGS_DEBUG = @CFLAGS_DEBUG@
 CFLAGS_DEFAULT = @CFLAGS_DEFAULT@
@@ -340,6 +345,7 @@ distclean: clean
 	-rm -rf autom4te*.cache
 	-rm -f configure
 	-rm -f Makefile
+	-rm -f websh.conf
 
 # =============================================================================
 # Install
@@ -370,10 +376,24 @@ install-libraries: install-dirs libraries
 	@$(RESTART_APACHE)
 
 # documentation / sample mod_websh setup
-install-doc: install-dirs
-	cp -f $(TOP_DIR)/../doc/mod_websh/conf/*.* $(cfgdir)
-	cp -f $(TOP_DIR)/../doc/mod_websh/htdocs/*.* $(docdir)
-	cp -f $(TOP_DIR)/../doc/mod_websh/README $(sharedir)
+#
+# cfgdir is now the directory WebshConfig actually points at, so websh.conf
+# must not be clobbered: websh.conf.dist is always written (the fresh
+# delivery, to look up and to diff against), websh.conf itself only when it
+# does not exist yet. A difference is reported -- an install rule that stays
+# silent about one reads as "nothing to do here".
+install-doc: install-dirs websh.conf
+	cp -f $(DOC_DIR)/mod_websh/conf/*.ws3 $(cfgdir)
+	cp -f $(DOC_DIR)/mod_websh/conf/httpd.conf $(cfgdir)
+	cp -f websh.conf $(cfgdir)/websh.conf.dist
+	@if test -f $(cfgdir)/websh.conf; then \
+	  echo "  $(cfgdir)/websh.conf exists - NOT overwritten; the new delivery is next to it as websh.conf.dist"; \
+	  cmp -s $(cfgdir)/websh.conf websh.conf || echo "  (the two differ - please diff them)"; \
+	else \
+	  cp -f websh.conf $(cfgdir)/websh.conf; \
+	fi
+	cp -f $(DOC_DIR)/mod_websh/htdocs/*.* $(docdir)
+	cp -f $(DOC_DIR)/mod_websh/README $(sharedir)
 
 # create destination directories
 install-dirs:
@@ -399,6 +419,13 @@ install-quickref: ../../doc/html/index.html
 
 Makefile: $(srcdir)/Makefile.in config.status
 	CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+# Generated into the build directory, not next to its .in file (VPATH).
+# CONFIG_FILES needs the full output:input tag -- given the output name alone,
+# config.status looks for websh.conf.in in srcdir and fails.  The input path is
+# the one from AC_CONFIG_FILES and is resolved relative to srcdir.
+websh.conf: $(DOC_DIR)/mod_websh/conf/websh.conf.in config.status
+	CONFIG_FILES=$@:../../doc/mod_websh/conf/websh.conf.in CONFIG_HEADERS= $(SHELL) ./config.status
 
 config.status: $(srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck

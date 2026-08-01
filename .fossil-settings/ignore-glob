@@ -11,3 +11,4 @@ doc/html/*
 src/unix/configure
 src/unix/Makefile
 src/unix/pkgIndex.tcl
+src/unix/websh.conf

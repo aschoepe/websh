@@ -9,10 +9,44 @@ Run mod_websh in your Apache
    point to ./htdocs or copy the file from ./htdocs to your preferred
    document root
 
-3. Adapt the path in the sample ./conf/websh.conf to point to your
-   installation (i.e. set webshroot correctly)
+3. Check ./conf/websh.conf. configure has already filled in webshroot
+   and the system encoding, so normally there is nothing to do here.
 
 4. Start Apache and access the demo page /index.html
+
+
+Where this is installed, and what "make install" touches
+=======================================================
+
+Configuration and demo material go to
+
+	<prefix>/share/websh<major>.<minor>/     e.g. share/websh3.7
+
+deliberately without the patch level: WebshConfig in your Apache
+configuration keeps pointing at the same file across 3.7.x updates.
+The code itself stays fully versioned (lib/websh<full>, bin/websh<full>,
+mod_websh<full>.so) -- the Tcl package version and the library name the
+module was linked against are part of the contract.
+
+Since that directory holds the file Apache actually reads, "make install"
+does not overwrite it:
+
+	conf/websh.conf.dist   always written -- the fresh delivery, to
+	                       look up and to diff against
+	conf/websh.conf        only created when it does not exist yet;
+	                       an existing one is kept, and a difference
+	                       to the new delivery is reported
+	htdocs/, README        overwritten (demo material)
+
+The system encoding of the shipped websh.conf is chosen at configure time:
+
+	--with-system-encoding=NAME   default utf-8; the name is checked
+	                              against the Tcl you build against,
+	                              so a typo fails configure instead of
+	                              the Apache start
+	--without-system-encoding     leave the line out; the encoding then
+	                              comes from the locale of the Apache
+	                              process
 
 
 Documentation
