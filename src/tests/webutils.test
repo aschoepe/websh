@@ -115,7 +115,7 @@ test webutils-getcontent-1.1 {explicit charset=utf-8 decodes UTF-8 body} {
     set data "K\xc3\xa4se"
     web::dispatch -cmd "" -querystring "" -postdata #data end "application/json; charset=utf-8"
     list [web::getContent] [string length [web::getContent]]
-} "Käse 4"
+} "K\u00e4se 4"
 
 test webutils-getcontent-1.2 {explicit charset=iso-8859-1 decodes latin-1 body} {
     wuCleanParam
@@ -125,7 +125,7 @@ test webutils-getcontent-1.2 {explicit charset=iso-8859-1 decodes latin-1 body} 
     set data "K\xe4se"
     web::dispatch -cmd "" -querystring "" -postdata #data end "text/xml; charset=iso-8859-1"
     list [web::getContent] [string length [web::getContent]]
-} "Käse 4"
+} "K\u00e4se 4"
 
 test webutils-getcontent-1.3 {application/json without charset defaults to utf-8 (RFC 8259)} {
     wuCleanParam
@@ -135,7 +135,7 @@ test webutils-getcontent-1.3 {application/json without charset defaults to utf-8
     set data "K\xc3\xa4se"
     web::dispatch -cmd "" -querystring "" -postdata #data end "application/json"
     list [web::getContent] [string length [web::getContent]]
-} "Käse 4"
+} "K\u00e4se 4"
 
 test webutils-getcontent-1.4 {+json suffix type without charset defaults to utf-8} {
     wuCleanParam
@@ -145,7 +145,7 @@ test webutils-getcontent-1.4 {+json suffix type without charset defaults to utf-
     set data "K\xc3\xa4se"
     web::dispatch -cmd "" -querystring "" -postdata #data end "application/vnd.api+json"
     list [web::getContent] [string length [web::getContent]]
-} "Käse 4"
+} "K\u00e4se 4"
 
 test webutils-getcontent-1.5 {non-JSON without charset uses CONTENT_ENCODING iso8859-1} {
     wuCleanParam
@@ -155,13 +155,22 @@ test webutils-getcontent-1.5 {non-JSON without charset uses CONTENT_ENCODING iso
     set data "K\xe4se"
     web::dispatch -cmd "" -querystring "" -postdata #data end "some/mime"
     web::getContent
-} "Käse"
+} "K\u00e4se"
 
 #------------------------------------------------------------------------------
 # multipart/form-data with UTF-8 body (formdata.c encoding restore fix)
+#
+# Text fields are decoded with the encoding in effect before web::dispatch,
+# i.e. the system encoding unless the application sets one - that is deliberate
+# (parseMultipartFormData restores it on purpose) and it is why websh.conf
+# ships "encoding system utf-8". The test therefore states its precondition
+# instead of failing under an exotic system encoding. Binary uploads are NOT
+# affected: readAndDumpBody reads them byte-faithfully in any case.
 #------------------------------------------------------------------------------
 
-test webutils-multipart-1.1 {multipart field with UTF-8 bytes decodes to one char} {
+testConstraint utf8System [expr {[encoding system] eq "utf-8"}]
+
+test webutils-multipart-1.1 {multipart field with UTF-8 bytes decodes to one char} utf8System {
     wuCleanParam
     set content "--xxxx\u0d
 Content-Disposition: form-data; name=\"k\"\u0d
@@ -172,7 +181,7 @@ K\xc3\xa4se\u0d
 "
     web::dispatch -cmd "" -querystring "" -postdata #content end "multipart/form-data; boundary=xxxx"
     list [web::formvar k] [string length [web::formvar k]]
-} "Käse 4"
+} "K\u00e4se 4"
 
 #------------------------------------------------------------------------------
 # web::returnJson / returnText / returnBinary
