@@ -768,11 +768,26 @@ long readAndDumpBody(Tcl_Interp * interp, Tcl_Channel in,
 	return 0;
 
     /* --------------------------------------------------------------------------
+     * read the upload body byte-faithfully: iso8859-1 maps every byte to
+     * the character of the same value, so char counts equal byte counts
+     * and the binary re-write below reproduces the input exactly. With a
+     * utf-8 encoding in effect, valid multi-byte sequences inside binary
+     * uploads would collapse into single characters and bytes would be lost.
+     * ----------------------------------------------------------------------- */
+    Tcl_DString bodyEnc;
+    Tcl_DStringInit(&bodyEnc);
+    Tcl_GetChannelOption(NULL, in, "-encoding", &bodyEnc);
+    Tcl_SetChannelOption(NULL, in, "-encoding", "iso8859-1");
+
+    /* --------------------------------------------------------------------------
      * open file
      * ----------------------------------------------------------------------- */
     if ((out = Tcl_OpenFileChannel(NULL, Tcl_GetString(tmpFileName),
-				   "w", filePermissions)) == NULL)
+				   "w", filePermissions)) == NULL) {
+	Tcl_SetChannelOption(NULL, in, "-encoding", Tcl_DStringValue(&bodyEnc));
+	Tcl_DStringFree(&bodyEnc);
 	return 0;
+    }
 
     /* --------------------------------------------------------------------------
      * switch output to "binary"
@@ -783,6 +798,8 @@ long readAndDumpBody(Tcl_Interp * interp, Tcl_Channel in,
 	LOG_MSG(interp, WRITE_LOG, __FILE__, __LINE__,
 		"web::dispatch (file upload)",
 		WEBLOG_INFO, "error setting translation to binary ", NULL);
+	Tcl_SetChannelOption(NULL, in, "-encoding", Tcl_DStringValue(&bodyEnc));
+	Tcl_DStringFree(&bodyEnc);
 	return 0;
     }
 
@@ -881,6 +898,9 @@ long readAndDumpBody(Tcl_Interp * interp, Tcl_Channel in,
     Tcl_Close(NULL, out);
 
     Tcl_DecrRefCount(prevline);
+
+    Tcl_SetChannelOption(NULL, in, "-encoding", Tcl_DStringValue(&bodyEnc));
+    Tcl_DStringFree(&bodyEnc);
 
     *bytesSkipped = (readBytes - writtenBytes);
 
