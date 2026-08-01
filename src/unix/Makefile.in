@@ -24,7 +24,7 @@ INSTALL_APACHE = @INSTALL_APACHE@
 LDCONFIG = @LDCONFIG@
 RESTART_APACHE = @RESTART_APACHE@
 
-SCRIPT_SOURCES = ../generic/context.tcl ../generic/script.ws3 ../generic/cookie.ws3 ../generic/sessctx.ws3 ../generic/filerandom.tcl ../generic/genpasswd.tcl ../generic/webutils.tcl
+SCRIPT_SOURCES = $(GENERIC_DIR)/context.tcl $(GENERIC_DIR)/script.ws3 $(GENERIC_DIR)/cookie.ws3 $(GENERIC_DIR)/sessctx.ws3 $(GENERIC_DIR)/filerandom.tcl $(GENERIC_DIR)/genpasswd.tcl $(GENERIC_DIR)/webutils.tcl
 
 web_OBJECTS = args.o \
 	cfg.o \
@@ -87,6 +87,7 @@ GENERIC_HDRS=
 SHELL = @SHELL@
 
 srcdir = @srcdir@
+GENERIC_DIR = $(srcdir)/../generic
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 
@@ -265,16 +266,16 @@ $(web_LIB_FILE): $(web_OBJECTS)
 	@MAKE_LIB@
 	$(RANLIB) $(web_LIB_FILE)
 
-script.h: ../generic/tcldecmt.tcl $(SCRIPT_SOURCES)
-	$(TCLSH_PROG) ../generic/tcldecmt.tcl $(SCRIPT_SOURCES) > $@
+script.h: $(GENERIC_DIR)/tcldecmt.tcl $(SCRIPT_SOURCES)
+	$(TCLSH_PROG) $(GENERIC_DIR)/tcldecmt.tcl $(SCRIPT_SOURCES) > $@
 
-script.o: ../generic/script.c script.h
+script.o: $(GENERIC_DIR)/script.c script.h
 	$(COMPILE) -I. -c $<
 
-interpool.o: ../generic/interpool.c
+interpool.o: $(GENERIC_DIR)/interpool.c
 	$(COMPILE) -UUSE_TCL_STUBS -c $<
 
-%.o: ../generic/%.c
+%.o: $(GENERIC_DIR)/%.c
 	$(COMPILE) -c $<
 
 websh: websh$(VERSION) $(web_LIB_FILE)
@@ -396,9 +397,8 @@ install-quickref: ../../doc/html/index.html
 # Makefile and configure rules
 # =============================================================================
 
-Makefile: $(srcdir)/Makefile.in  $(srcdir)/config.status
-	cd $(srcdir) \
-	  && CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
+Makefile: $(srcdir)/Makefile.in config.status
+	CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 config.status: $(srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
