@@ -9,7 +9,7 @@
 # Package name and version. TEA derives PKG_LIB_FILE from these.
 #--------------------------------------------------------------------
 
-AC_INIT([websh],[3.7.8])
+AC_INIT([websh],[3.7.9])
 
 TEA_INIT()
 
