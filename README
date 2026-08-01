@@ -1,5 +1,5 @@
                          --------------------
-                         Websh, Version 3.7.8
+                         Websh, Version 3.7.9
                          --------------------
 
             Copyright 1996-2001, Netcetera AG, Switzerland
@@ -75,7 +75,7 @@ Requirements:
   make test           # expected: 497 passed, 5 skipped, 0 failed
   make install
 
-Build targets (VERSION as set in configure.ac, e.g. 3.7.8; shared
+Build targets (VERSION as set in configure.ac, e.g. 3.7.9; shared
 library extension is .so on Linux, .dylib on macOS):
 - webshVERSION          standalone binary (dynamically linked to libwebsh)
 - libwebshVERSION.so    TEA-compliant shared library (Tcl package "websh")
@@ -88,6 +88,22 @@ Install layout (prefix = /usr/local/tcl86):
 - lib/libwebsh.so -> libwebshVERSION.so
 - lib/httpd/modules/mod_webshVERSION.so  (Apache only)
 - lib/httpd/modules/mod_websh.so -> mod_webshVERSION.so  (Apache only)
+
+The configuration and the demo material go to the major.minor line
+(SERIES = 3.7 for any 3.7.x), so that WebshConfig in the Apache
+configuration survives a patch release untouched:
+- share/webshSERIES/conf/websh.conf.dist   always written (fresh delivery)
+- share/webshSERIES/conf/websh.conf        only created when absent
+- share/webshSERIES/conf/*.ws3, httpd.conf, htdocs/, README
+
+Since that directory holds the file Apache actually reads, make install
+never overwrites an existing websh.conf: the new delivery is installed
+next to it as websh.conf.dist, and a difference between the two is
+reported. Compare them with diff and carry over what you want.
+
+The code itself stays fully versioned (bin, lib, mod_websh): the Tcl
+package version and the library name the Apache module was linked
+against are part of the contract.
 
 On Linux, make install automatically runs ldconfig and restarts Apache
 (systemctl restart apache2 / httpd) if the service exists. On macOS
@@ -114,6 +130,20 @@ extra flags required.
 To change the install prefix:
 
   ./configure --with-tcl=/usr/local/tcl86/lib --prefix=/opt
+
+The shipped websh.conf starts with an "encoding system" line, utf-8 by
+default. It is process-global in Tcl, so it reaches every request
+interpreter although websh.conf runs in its own -- without it the
+encoding comes from the locale of the Apache process, which makes the
+same application behave differently from host to host. To choose a
+different encoding or leave the line out:
+
+  ./configure --with-system-encoding=iso8859-1
+  ./configure --without-system-encoding
+
+The name is validated against the Tcl being built against, so a typo
+such as "utf8" fails configure instead of taking down every .ws3 of the
+server when Apache starts.
 
 
 4. mod_websh: Websh as Apache Module
