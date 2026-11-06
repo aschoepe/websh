@@ -70,5 +70,24 @@ test logToCmd-2.1 {logToCmd: test log to command error} {
     set msg "$c - $c2 - $res - $msg - $r2"
 } {1 - 0 - Bar - wrong # args: should be "testLogHandler msg other" - can't read "other": no such variable}
 
+# -----------------------------------------------------------------------------
+# a message with printf conversions must reach the destination verbatim
+# (no log handler may use the message as a format string)
+# -----------------------------------------------------------------------------
+proc fmtProbeHandler {msg} {
+    return $msg
+}
+
+test logToCmd-3.1 {message with printf conversions is passed verbatim} {
+    web::logdest delete
+    web::loglevel delete
+    web::logdest add *.-debug command fmtProbeHandler
+    web::loglevel add *.-debug
+    set res [web::log info {fmt-probe A|%8s|B|%5d|C|%%|D}]
+    web::logdest delete
+    web::loglevel delete
+    expr {[string first {fmt-probe A|%8s|B|%5d|C|%%|D} $res] >= 0}
+} {1}
+
 # cleanup
 ::tcltest::cleanupTests

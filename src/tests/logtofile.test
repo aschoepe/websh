@@ -87,5 +87,22 @@ test logtofile-3.1 {web::log to file} {
     set res [list $empty [string match "*\] info2.debug: hi*" $hi]]
 } {{} 1}
 
+# -----------------------------------------------------------------------------
+# a message with printf conversions must reach the destination verbatim
+# (no log handler may use the message as a format string)
+# -----------------------------------------------------------------------------
+test logtofile-3.2 {message with printf conversions is written verbatim} {
+    web::logdest delete
+    web::loglevel delete
+    web::logdest add *.-debug file -unbuffered test-3.2.dat
+    web::loglevel add *.-debug
+    web::log info {fmt-probe A|%8s|B|%5d|C|%%|D}
+    web::logdest delete
+    web::loglevel delete
+    web::readfile test-3.2.dat log
+    file delete test-3.2.dat
+    expr {[string first {fmt-probe A|%8s|B|%5d|C|%%|D} $log] >= 0}
+} {1}
+
 # cleanup
 ::tcltest::cleanupTests

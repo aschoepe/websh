@@ -29,7 +29,7 @@ proc scanFileForPattern {fileName pattern} {
 
     if {[file exists $fileName]} {
 	if {[catch {
-	    exec grep $pattern $fileName
+	    exec grep -F -- $pattern $fileName
 	} msg]} {
 	    return 0
 	} else {
@@ -64,7 +64,36 @@ proc sysLogIsReadable {} {
 
 testConstraint sysLogUnreadableOrNotFound [sysLogIsReadable]
 
-test logToSyslog-1.2 {websh3_toSyslog: test log} {unixOnly sysLogUnreadableOrNotFound} {
+# -----------------------------------------------------------------------------
+# sysLogDelivers -- 1 if a message sent via syslog() shows up in one of the
+#   readable files of srclist. On macOS syslog() feeds the unified log, not
+#   /var/log/system.log, so the file checks below would be meaningless there.
+# -----------------------------------------------------------------------------
+proc sysLogDelivers {} {
+    global srclist
+    if {![sysLogIsReadable]} {
+	return 0
+    }
+    set marker "websh-syslog-probe-[clock seconds]-[pid]"
+    web::logdest delete
+    web::loglevel delete
+    web::loglevel add info.-debug
+    web::logdest add info.-debug syslog 10
+    web::log info.info $marker
+    web::logdest delete
+    web::loglevel delete
+    after 1000
+    foreach file $srclist {
+	if {[scanFileForPattern $file $marker]} {
+	    return 1
+	}
+    }
+    return 0
+}
+
+testConstraint sysLogDelivers [sysLogDelivers]
+
+test logToSyslog-1.2 {websh3_toSyslog: test log} {unixOnly sysLogDelivers} {
     set res "Failed"
 
     set curTim [clock seconds]
@@ -83,13 +112,45 @@ test logToSyslog-1.2 {websh3_toSyslog: test log} {unixOnly sysLogUnreadableOrNot
 
     global srclist
     foreach tmp $srclist {
-        if {[scanFileForPattern $tmp $format]} {
+        if {[scanFileForPattern $tmp [string trim $format]]} {
 	    set res "Ok"
             break
         }
     }
 
     ## clean up
+    web::logdest delete
+    web::loglevel delete
+
+    set res
+} {Ok}
+
+# -----------------------------------------------------------------------------
+# a message with printf conversions must reach the destination verbatim
+# (no log handler may use the message as a format string)
+# -----------------------------------------------------------------------------
+test logToSyslog-1.3 {message with printf conversions is written verbatim} {unixOnly sysLogDelivers} {
+    set res "Failed"
+    set probe "fmt-probe-[clock seconds]-[pid] A|%8s|B|%5d|C|%%|D"
+
+    web::logdest delete
+    web::loglevel delete
+    web::loglevel add info.-debug
+    web::logdest add info.-debug syslog 10
+
+    web::log info.info $probe
+
+    ## give syslog a little time to feed the message to the file
+    after 1000
+
+    global srclist
+    foreach tmp $srclist {
+        if {[scanFileForPattern $tmp $probe]} {
+	    set res "Ok"
+            break
+        }
+    }
+
     web::logdest delete
     web::loglevel delete
 

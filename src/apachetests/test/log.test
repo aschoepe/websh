@@ -1,0 +1,14 @@
+# log.test -- "apache" log destination (web::logdest add ... apache)
+
+set testfilename "log.ws3"
+set probe {fmt-probe A|%8s|B|%5d|C|%%|D}
+
+::tcltest::test log-1.1 {apache logdest writes the message verbatim} {
+    set page [::http::geturl "${urlbase}$testfilename"]
+    set body [::http::data $page]
+    ::http::cleanup $page
+    set fh [open logs/error.log r]
+    set log [read $fh]
+    close $fh
+    list $body [expr {[string first $probe $log] >= 0}]
+} [list "logged\n" 1]

@@ -19,6 +19,20 @@ Known Issues
 Trunk
 -----
 
+- SECURITY: the "apache" log destination (web::logdest add ... apache)
+  passed the log message to ap_log_rerror() as the printf format
+  string. Any % sequence in a logged message - e.g. user-supplied data
+  such as a header value, a user name or a browser error report - was
+  evaluated by the Apache worker (%s/%x read memory, %n writes it).
+  The message is now passed as an argument to a fixed "%s" format and
+  reaches the error log verbatim. The internal mod_websh messages that
+  went through the same handler use a separate printf-style helper
+  (logToApFmt). Tests added for every log destination (channel, file,
+  command, syslog, apache).
+
+- apachetests: load the MPM module on httpd 2.4 builds that ship it as
+  a DSO (the suite failed with "No MPM loaded")
+
 - Apache tests can now run with httpd 2.4 and are cleaned up to run
   repeadedly if needed. Also server is only started once by default
 

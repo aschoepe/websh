@@ -169,7 +169,7 @@ WebInterp *createWebInterp(websh_server_conf * conf,
 
     logtoap->constructor = createLogToAp;
     logtoap->destructor = destroyLogToAp;
-    logtoap->handler = (int (*)(Tcl_Interp *, ClientData, char *)) logToAp;
+    logtoap->handler = logToAp;
     registerLogPlugIn(webInterp->interp, APCHANNEL, logtoap);
 
     /* ------------------------------------------------------------------------
@@ -410,7 +410,7 @@ WebInterp *poolGetWebInterp(websh_server_conf * conf, char *filename,
 	    webInterp = webInterpClass->first;
 	    while (webInterp != NULL) {
 
-		logToAp(webInterp->interp, NULL,
+		logToApFmt(webInterp->interp, NULL,
 			"interpreter expired: source changed (id %ld, class %s)", webInterp->id, webInterp->interpClass->filename);
 		if (webInterp->state == WIP_INUSE)
 		    webInterp->state = WIP_EXPIREDINUSE;
@@ -434,7 +434,7 @@ WebInterp *poolGetWebInterp(websh_server_conf * conf, char *filename,
 		if (webInterpClass->maxidletime
 		    && (r->request_time - webInterp->lastusedtime) >
 		    webInterpClass->maxidletime) {
-		    logToAp(webInterp->interp, NULL,
+		    logToApFmt(webInterp->interp, NULL,
 			    "interpreter expired: idle time reached (id %ld, claa %s)", webInterp->id, webInterp->interpClass->filename);
 		    webInterp->state = WIP_EXPIRED;
 
@@ -443,7 +443,7 @@ WebInterp *poolGetWebInterp(websh_server_conf * conf, char *filename,
 		    if (webInterpClass->maxttl
 			&& (r->request_time - webInterp->starttime) >
 			webInterpClass->maxttl) {
-			logToAp(webInterp->interp, NULL,
+			logToApFmt(webInterp->interp, NULL,
 				"interpreter expired: time to live reached (id %ld, class %s)", webInterp->id, webInterp->interpClass->filename);
 			webInterp->state = WIP_EXPIRED;
 		    }
@@ -525,7 +525,7 @@ void poolReleaseWebInterp(WebInterp * webInterp)
 	    /* check for num requests */
 
 	    if (webInterpClass->maxrequests && (webInterp->numrequests >= webInterpClass->maxrequests)) {
-		logToAp(webInterp->interp, NULL,
+		logToApFmt(webInterp->interp, NULL,
 			"interpreter expired: request count reached (id %ld, class %s)", webInterp->id, webInterp->interpClass->filename);
 		webInterp->state = WIP_EXPIRED;
 	    }
@@ -659,7 +659,7 @@ Tcl_Interp *createMainInterp(websh_server_conf * conf)
     }
     logtoap->constructor = createLogToAp;
     logtoap->destructor = destroyLogToAp;
-    logtoap->handler = (int (*)(Tcl_Interp *, ClientData, char *)) logToAp;
+    logtoap->handler = logToAp;
     registerLogPlugIn(mainInterp, APCHANNEL, logtoap);
 
     /* eval init code */
@@ -737,7 +737,7 @@ void cleanupPool(websh_server_conf * conf)
 		    if (webInterpClass->maxidletime
 			&& (t - webInterp->lastusedtime) >
 			webInterpClass->maxidletime) {
-			logToAp(webInterp->interp, NULL,
+			logToApFmt(webInterp->interp, NULL,
 				"interpreter expired: idle time reached (id %ld, class %s)", webInterp->id, webInterp->interpClass->filename);
 			webInterp->state = WIP_EXPIRED;
 		    }
@@ -745,7 +745,7 @@ void cleanupPool(websh_server_conf * conf)
 			if (webInterpClass->maxttl
 			    && (t - webInterp->starttime) >
 			    webInterpClass->maxttl) {
-			    logToAp(webInterp->interp, NULL,
+			    logToApFmt(webInterp->interp, NULL,
 				    "interpreter expired: time to live reached (id %ld, class %s)", webInterp->id, webInterp->interpClass->filename);
 			    webInterp->state = WIP_EXPIRED;
 			}

@@ -1,0 +1,18 @@
+# log.ws3 -- exercise the "apache" log destination.
+#
+# The message contains printf conversions; it must reach the Apache
+# error log verbatim (it used to be passed to ap_log_rerror() as the
+# format string).
+
+web::command default {
+    web::logdest delete
+    web::loglevel delete
+    web::logdest add *.-debug apache
+    web::loglevel add *.-debug
+    web::log info {fmt-probe A|%8s|B|%5d|C|%%|D}
+    web::logdest delete
+    web::loglevel delete
+    web::put "logged\n"
+}
+
+web::dispatch

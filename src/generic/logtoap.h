@@ -30,6 +30,19 @@ int destroyLogToApData(Tcl_Interp * interp, LogToApData * logToApData);
 ClientData createLogToAp(Tcl_Interp * interp, ClientData clientData,
 			 int objc, Tcl_Obj * CONST objv[]);
 int destroyLogToAp(Tcl_Interp * interp, ClientData clientData);
-int logToAp(Tcl_Interp * interp, ClientData clientData, char *msg, ...);
+/* buffer for the formatted message of logToApFmt */
+#define LOGTOAP_FMT_BUFSIZE 2048
+
+#if defined(__GNUC__) || defined(__clang__)
+#define LOGTOAP_PRINTF(fmtIdx, argIdx) __attribute__((format(printf, fmtIdx, argIdx)))
+#else
+#define LOGTOAP_PRINTF(fmtIdx, argIdx)
+#endif
+
+/* log handler (LogPlugInHandler): msg is logged verbatim, never as format */
+int logToAp(Tcl_Interp * interp, ClientData clientData, char *msg);
+/* printf-style variant for mod_websh's own messages; fmt must be a literal */
+int logToApFmt(Tcl_Interp * interp, ClientData clientData, const char *fmt, ...)
+    LOGTOAP_PRINTF(3, 4);
 
 #endif

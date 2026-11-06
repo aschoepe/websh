@@ -82,5 +82,25 @@ test logToChannel-2.1 {closed channel} {
 can not find channel named "channel"
 can not find channel named "channel"}
 
+# -----------------------------------------------------------------------------
+# a message with printf conversions must reach the destination verbatim
+# (no log handler may use the message as a format string)
+# -----------------------------------------------------------------------------
+test logToChannel-3.1 {message with printf conversions is written verbatim} {
+    web::logdest delete
+    web::loglevel delete
+    set fileName "tochannel-3.1-[pid].dat"
+    set fh [open $fileName "a"]
+    web::logdest add *.-debug channel -unbuffered $fh
+    web::loglevel add *.-debug
+    web::log info {fmt-probe A|%8s|B|%5d|C|%%|D}
+    web::logdest delete
+    web::loglevel delete
+    close $fh
+    web::readfile $fileName log
+    file delete $fileName
+    expr {[string first {fmt-probe A|%8s|B|%5d|C|%%|D} $log] >= 0}
+} {1}
+
 # cleanup
 ::tcltest::cleanupTests

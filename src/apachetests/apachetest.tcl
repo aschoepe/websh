@@ -34,8 +34,14 @@ namespace eval apachetest {
 	mod_authz_groupfile authz_groupfile_module
     }
 
-    ## Apache 2.4 also requires mod_unixd
+    ## Apache 2.4 also requires mod_unixd. Its MPM is usually a loadable
+    ## module (mod_mpm_*.so) and exactly one of them must be loaded; the
+    ## three keys share one value so that lsort -unique below requests it
+    ## only once, and it is skipped if an MPM is compiled in.
     array set module_assoc_24 {
+	prefork                  {mpm_prefork_module mpm_event_module mpm_worker_module}
+	event                    {mpm_prefork_module mpm_event_module mpm_worker_module}
+	worker                   {mpm_prefork_module mpm_event_module mpm_worker_module}
 	mod_authn_core           authn_core_module
 	mod_authz_core           authz_core_module
 	mod_access_compat        access_compat_module
@@ -312,7 +318,7 @@ proc apachetest::determinemodules { binname } {
     foreach {n k} [array get modules] {
 	lappend needed $k
     }
-    set needed [lsort $needed]
+    set needed [lsort -unique $needed]
 
     set needtoget [list]
     foreach mod $needed {
